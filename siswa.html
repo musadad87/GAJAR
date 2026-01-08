@@ -144,7 +144,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-slate-400"></i>
                     </div>
-                    <input type="text" id="search-input" onkeyup="filterStudents()" placeholder="Cari nama, NISN, atau masalah..." 
+                    <input type="text" id="search-input" onkeyup="filterStudents()" placeholder="Cari nama, NISN, sekolah asal, atau masalah..." 
                         class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                 </div>
 
@@ -274,6 +274,19 @@
                                                     <span class="ml-2 text-sm text-gray-700">Perempuan</span>
                                                 </label>
                                             </div>
+                                        </div>
+                                        <!-- NEW: Status Pendaftaran -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Status Pendaftaran</label>
+                                            <select id="form-enrollment-status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 bg-white">
+                                                <option value="Baru">Murid Baru</option>
+                                                <option value="Pindahan">Pindahan</option>
+                                            </select>
+                                        </div>
+                                        <!-- NEW: Sekolah Asal -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Sekolah Asal</label>
+                                            <input type="text" id="form-previous-school" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" placeholder="Nama sekolah sebelumnya...">
                                         </div>
                                     </div>
                                     <div class="mt-3">
@@ -423,6 +436,9 @@
         const formClass = document.getElementById('form-class');
         const formMajor = document.getElementById('form-major');
         const formAddress = document.getElementById('form-address');
+        const formEnrollmentStatus = document.getElementById('form-enrollment-status'); // NEW
+        const formPreviousSchool = document.getElementById('form-previous-school');     // NEW
+
         const formStatusDapodik = document.getElementById('form-status-dapodik');
         const formStatusVerval = document.getElementById('form-status-verval');
         const formStatusSipintar = document.getElementById('form-status-sipintar');
@@ -492,6 +508,8 @@
             const major = formMajor.value;
             const address = formAddress.value.trim();
             const gender = document.querySelector('input[name="gender"]:checked').value;
+            const enrollmentStatus = formEnrollmentStatus.value;
+            const previousSchool = formPreviousSchool.value.trim();
             
             const statusDapodik = formStatusDapodik.value;
             const statusVerval = formStatusVerval.value;
@@ -511,6 +529,7 @@
             try {
                 const studentData = {
                     nisn, name, class: kelas, major, gender, address,
+                    enrollmentStatus, previousSchool, // NEW FIELDS
                     statusDapodik, statusVerval, statusSipintar, statusSiswa, keterangan,
                     updatedAt: serverTimestamp()
                 };
@@ -563,6 +582,7 @@
                 const matchesSearch = 
                     (s.name && s.name.toLowerCase().includes(searchQuery)) ||
                     (s.nisn && s.nisn.toString().includes(searchQuery)) ||
+                    (s.previousSchool && s.previousSchool.toLowerCase().includes(searchQuery)) || // Added search by previous school
                     (s.keterangan && s.keterangan.toLowerCase().includes(searchQuery));
                 
                 // 2. Class Filter
@@ -639,6 +659,8 @@
                 "Kelas": s.class,
                 "Jurusan": s.major,
                 "L/P": s.gender,
+                "Status Daftar": s.enrollmentStatus || 'Baru', // NEW
+                "Sekolah Asal": s.previousSchool || '-',       // NEW
                 "Alamat": s.address,
                 "Status Dapodik": s.statusDapodik || 'Aman',
                 "Status Verval": s.statusVerval || 'Aman',
@@ -696,6 +718,8 @@
                             class: row['Kelas'] || row['kelas'] || 'VII',
                             major: row['Jurusan'] || row['jurusan'] || 'SMP',
                             gender: row['Gender'] || row['Jenis Kelamin'] || 'Laki-laki',
+                            enrollmentStatus: row['Status Daftar'] || 'Baru',     // NEW
+                            previousSchool: row['Sekolah Asal'] || '-',           // NEW
                             address: row['Alamat'] || row['alamat'] || '',
                             // Default status
                             statusDapodik: 'Aman',
@@ -754,6 +778,11 @@
                 const ketShort = ket.length > 30 ? ket.substring(0, 30) + '...' : ket;
                 const ketColor = ket === '-' ? 'text-gray-400' : 'text-red-600 font-medium';
 
+                // Tampilan untuk status pendaftaran di bawah Nama
+                const enrollmentBadge = student.enrollmentStatus === 'Pindahan' 
+                    ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-1.5 rounded ml-2 border border-orange-200">Pindahan</span>`
+                    : '';
+
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
@@ -761,7 +790,10 @@
                                 ${initials}
                             </div>
                             <div class="ml-4">
-                                <div class="text-sm font-medium text-slate-900">${student.name}</div>
+                                <div class="text-sm font-medium text-slate-900 flex items-center">
+                                    ${student.name}
+                                    ${enrollmentBadge}
+                                </div>
                                 <div class="text-xs text-slate-500">NISN: ${student.nisn || '-'}</div>
                             </div>
                         </div>
@@ -801,6 +833,10 @@
             updateMajorOptions(); // Trigger update for default class
             
             formAddress.value = '';
+            // Reset new fields
+            formEnrollmentStatus.value = 'Baru';
+            formPreviousSchool.value = '';
+
             document.querySelector('input[name="gender"][value="Laki-laki"]').checked = true;
             formStatusDapodik.value = 'Aman'; formStatusVerval.value = 'Aman'; formStatusSipintar.value = 'Aman'; formStatusSiswa.value = 'Ada'; formKeterangan.value = '';
             document.getElementById('modal-title').textContent = "Tambah Siswa Baru";
@@ -817,6 +853,10 @@
             updateMajorOptions(student.major); // Pass current major to restore it
 
             formAddress.value = student.address || '';
+            // Populate new fields
+            formEnrollmentStatus.value = student.enrollmentStatus || 'Baru';
+            formPreviousSchool.value = student.previousSchool || '';
+
             formStatusDapodik.value = student.statusDapodik || 'Aman'; formStatusVerval.value = student.statusVerval || 'Aman'; formStatusSipintar.value = student.statusSipintar || 'Aman'; formStatusSiswa.value = student.statusSiswa || 'Ada'; formKeterangan.value = student.keterangan || '';
             if (student.gender) { const radio = document.querySelector(`input[name="gender"][value="${student.gender}"]`); if (radio) radio.checked = true; }
             document.getElementById('modal-title').textContent = "Edit Data Siswa";
