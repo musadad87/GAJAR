@@ -85,7 +85,7 @@
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800">Daftar Siswa</h1>
-                    <p class="text-slate-500 text-sm mt-1">Kelola data siswa, status Dapodik, dan VervalPD.</p>
+                    <p class="text-slate-500 text-sm mt-1">Kelola data siswa SMP & SMK, status Dapodik, dan VervalPD.</p>
                 </div>
                 
                 <div class="flex flex-wrap gap-2 w-full lg:w-auto">
@@ -152,18 +152,17 @@
                 <div>
                     <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">Filter Kelas</label>
                     <div class="flex flex-wrap gap-2" id="class-filters">
-                        <button onclick="setClassFilter('Semua')" class="filter-btn active px-4 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
+                        <button onclick="setClassFilter('Semua')" class="filter-btn active px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
                             Semua
                         </button>
-                        <button onclick="setClassFilter('X')" class="filter-btn px-4 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
-                            Kelas X
-                        </button>
-                        <button onclick="setClassFilter('XI')" class="filter-btn px-4 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
-                            Kelas XI
-                        </button>
-                        <button onclick="setClassFilter('XII')" class="filter-btn px-4 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
-                            Kelas XII
-                        </button>
+                        <!-- SMP -->
+                        <button onclick="setClassFilter('VII')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">VII</button>
+                        <button onclick="setClassFilter('VIII')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">VIII</button>
+                        <button onclick="setClassFilter('IX')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">IX</button>
+                        <!-- SMK -->
+                        <button onclick="setClassFilter('X')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">X</button>
+                        <button onclick="setClassFilter('XI')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">XI</button>
+                        <button onclick="setClassFilter('XII')" class="filter-btn px-3 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">XII</button>
                     </div>
                 </div>
             </div>
@@ -246,15 +245,20 @@
                                             <label class="block text-sm font-medium text-gray-700">Kelas & Jurusan</label>
                                             <div class="flex gap-2">
                                                 <select id="form-class" class="mt-1 block w-1/3 rounded-md border-gray-300 shadow-sm border p-2 bg-white">
-                                                    <option value="X">X</option>
-                                                    <option value="XI">XI</option>
-                                                    <option value="XII">XII</option>
+                                                    <optgroup label="SMP">
+                                                        <option value="VII">VII</option>
+                                                        <option value="VIII">VIII</option>
+                                                        <option value="IX">IX</option>
+                                                    </optgroup>
+                                                    <optgroup label="SMK">
+                                                        <option value="X">X</option>
+                                                        <option value="XI">XI</option>
+                                                        <option value="XII">XII</option>
+                                                    </optgroup>
                                                 </select>
                                                 <select id="form-major" class="mt-1 block w-2/3 rounded-md border-gray-300 shadow-sm border p-2 bg-white">
-                                                    <option value="IPA">IPA</option>
-                                                    <option value="IPS">IPS</option>
-                                                    <option value="Bahasa">Bahasa</option>
-                                                    <option value="Teknik">Teknik</option>
+                                                    <!-- Options will be populated by JS -->
+                                                    <option value="SMP">SMP</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -564,8 +568,6 @@
                 // 2. Class Filter
                 let matchesClass = true;
                 if (activeClassFilter !== 'Semua') {
-                    // Check if student class matches (e.g., 'X' matches 'X')
-                    // Assuming s.class stores 'X', 'XI', 'XII'
                     matchesClass = s.class === activeClassFilter;
                 }
 
@@ -577,7 +579,6 @@
             if (filtered.length === 0) {
                 tableBody.innerHTML = '';
                 emptyState.classList.remove('hidden');
-                // Change empty state message based on context
                 if (allStudents.length > 0) {
                     emptyState.querySelector('p').textContent = "Tidak ada siswa yang cocok dengan filter ini.";
                 }
@@ -585,6 +586,39 @@
                 emptyState.classList.add('hidden');
             }
         };
+
+        // --- Logic for Major Selection based on Class ---
+        function updateMajorOptions(selectedMajor = null) {
+            const cls = formClass.value;
+            formMajor.innerHTML = ''; // Clear existing
+
+            if (['VII', 'VIII', 'IX'].includes(cls)) {
+                // SMP
+                formMajor.add(new Option('SMP', 'SMP'));
+            } else {
+                // SMK (X, XI, XII)
+                formMajor.add(new Option('AKUN', 'AKUN'));
+                formMajor.add(new Option('AGRO', 'AGRO'));
+            }
+
+            // Restore selection if valid
+            if (selectedMajor) {
+                // Check if the selected major exists in the new options
+                let exists = false;
+                for(let i=0; i<formMajor.options.length; i++){
+                    if(formMajor.options[i].value === selectedMajor){
+                        exists = true;
+                        break;
+                    }
+                }
+                if(exists) {
+                    formMajor.value = selectedMajor;
+                }
+            }
+        }
+
+        // Attach event listener to class dropdown
+        document.getElementById('form-class').addEventListener('change', () => updateMajorOptions());
 
         // --- Excel Import/Export Logic ---
 
@@ -655,15 +689,12 @@
                     let count = 0;
                     
                     jsonData.forEach(row => {
-                        // Mapping Flexible (Case insensitive check could be better, but keep simple)
-                        // Expected Headers: NISN, Nama, Kelas, Jurusan, Alamat, Gender
-                        
                         const newDocRef = doc(studentsRef); // Auto ID
                         batch.set(newDocRef, {
                             nisn: row['NISN'] || row['nisn'] || '-',
                             name: row['Nama'] || row['nama'] || row['Nama Lengkap'] || 'Tanpa Nama',
-                            class: row['Kelas'] || row['kelas'] || 'X',
-                            major: row['Jurusan'] || row['jurusan'] || 'IPA',
+                            class: row['Kelas'] || row['kelas'] || 'VII',
+                            major: row['Jurusan'] || row['jurusan'] || 'SMP',
                             gender: row['Gender'] || row['Jenis Kelamin'] || 'Laki-laki',
                             address: row['Alamat'] || row['alamat'] || '',
                             // Default status
@@ -763,9 +794,13 @@
             });
         }
 
-        // --- Modal & Delete Logic (Same as before) ---
+        // --- Modal & Delete Logic ---
         window.openModal = function() {
-            formId.value = ''; formNisn.value = ''; formName.value = ''; formClass.value = 'X'; formMajor.value = 'IPA'; formAddress.value = '';
+            formId.value = ''; formNisn.value = ''; formName.value = ''; 
+            formClass.value = 'VII'; // Default to SMP
+            updateMajorOptions(); // Trigger update for default class
+            
+            formAddress.value = '';
             document.querySelector('input[name="gender"][value="Laki-laki"]').checked = true;
             formStatusDapodik.value = 'Aman'; formStatusVerval.value = 'Aman'; formStatusSipintar.value = 'Aman'; formStatusSiswa.value = 'Ada'; formKeterangan.value = '';
             document.getElementById('modal-title').textContent = "Tambah Siswa Baru";
@@ -775,7 +810,13 @@
         window.editStudent = function(id) {
             const student = allStudents.find(s => s.id === id);
             if (!student) return;
-            formId.value = student.id; formNisn.value = student.nisn || ''; formName.value = student.name || ''; formClass.value = student.class || 'X'; formMajor.value = student.major || 'IPA'; formAddress.value = student.address || '';
+            formId.value = student.id; formNisn.value = student.nisn || ''; formName.value = student.name || ''; 
+            
+            // Set Class and trigger Major update
+            formClass.value = student.class || 'VII'; 
+            updateMajorOptions(student.major); // Pass current major to restore it
+
+            formAddress.value = student.address || '';
             formStatusDapodik.value = student.statusDapodik || 'Aman'; formStatusVerval.value = student.statusVerval || 'Aman'; formStatusSipintar.value = student.statusSipintar || 'Aman'; formStatusSiswa.value = student.statusSiswa || 'Ada'; formKeterangan.value = student.keterangan || '';
             if (student.gender) { const radio = document.querySelector(`input[name="gender"][value="${student.gender}"]`); if (radio) radio.checked = true; }
             document.getElementById('modal-title').textContent = "Edit Data Siswa";
