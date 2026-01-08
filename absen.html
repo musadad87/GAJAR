@@ -2,58 +2,77 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guru Pro - Terhubung Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>Guru Pro Mobile (Sync)</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- SheetJS for Excel -->
+    <!-- SheetJS -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         
-        body { font-family: 'Roboto', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f3f4f6; padding-bottom: 80px; }
 
         /* Print Styles */
         @media print {
             .no-print { display: none !important; }
-            body { background-color: white; font-size: 10pt; }
+            body { background-color: white; font-size: 10pt; padding-bottom: 0; }
             .print-container { padding: 0; margin: 0; width: 100%; box-shadow: none; }
             table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
+            tr { page-break-inside: avoid; }
             th, td { border: 1px solid #000 !important; padding: 2px !important; }
-            input { border: none !important; background: transparent; }
-            select { appearance: none; border: none; }
             @page { size: A4 landscape; margin: 5mm; }
         }
 
         .editable:focus { background-color: #e0f2fe; outline: none; }
-        .tab-active { background-color: #2563eb; color: white; }
-        .tab-inactive { background-color: #1e3a8a; color: gray-300; }
-        .tab-inactive:hover { background-color: #1e40af; color: white; }
+        .overflow-x-auto::-webkit-scrollbar { height: 4px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         
-        .overflow-x-auto::-webkit-scrollbar { height: 8px; }
-        .overflow-x-auto::-webkit-scrollbar-track { background: #f1f1f1; }
-        .overflow-x-auto::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        .overflow-x-auto::-webkit-scrollbar-thumb:hover { background: #555; }
+        @media (max-width: 640px) {
+            .container-custom { padding: 10px; width: 100%; margin-top: 0; border-radius: 0; box-shadow: none; }
+            input, select, button { font-size: 14px; }
+        }
 
-        /* Loader */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #0f172a; color: white;
+            display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 50;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 10px; opacity: 0.6; transition: 0.3s;
+            background: none; border: none; color: white;
+        }
+        .nav-item.active { opacity: 1; color: #fbbf24; transform: scale(1.1); }
+        .nav-item i { font-size: 18px; margin-bottom: 2px; }
+
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); z-index: 9999;
+            background: rgba(255,255,255,0.95); z-index: 9999;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
         .spinner {
-            width: 50px; height: 50px; border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db; border-radius: 50%;
+            width: 40px; height: 40px; border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .status-indicator {
-            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        
+        #sync-badge {
+            font-size: 10px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569; cursor: pointer;
         }
     </style>
 </head>
@@ -62,220 +81,190 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
-        <h2 class="text-xl font-bold text-gray-700">Menghubungkan ke Database Anda...</h2>
-        <p class="text-gray-500">Project ID: x-casing-482715-v7</p>
+        <h2 class="text-lg font-bold text-gray-700">Menghubungkan...</h2>
+        <p class="text-sm text-gray-500">Mencari Kode Sinkronisasi</p>
     </div>
 
-    <!-- NAVIGATION BAR -->
-    <div class="bg-slate-900 text-white p-3 shadow-md no-print sticky top-0 z-50">
-        <div class="max-w-[98%] mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
-            
-            <div class="flex items-center gap-4 w-full md:w-auto">
-                <h1 class="text-lg font-bold text-yellow-400 hidden md:block"><i class="fas fa-database mr-2"></i>GuruPro Cloud</h1>
-                
-                <div class="flex items-center bg-slate-800 rounded p-1 border border-slate-600">
-                    <span class="text-xs text-gray-400 ml-2 mr-2">KELAS:</span>
-                    <select id="class-selector" onchange="changeClass(this.value)" class="bg-slate-900 text-white font-bold text-sm p-1 rounded border-none focus:ring-0 cursor-pointer min-w-[120px]">
-                        <!-- Options generated JS -->
+    <!-- TOP BAR -->
+    <div class="bg-white p-3 shadow-sm sticky top-0 z-40 flex flex-col gap-2 no-print">
+        <div class="flex justify-between items-center w-full">
+            <div class="flex items-center gap-2 flex-1">
+                <div class="bg-slate-100 rounded p-1 px-2 flex-1 flex items-center border">
+                    <i class="fas fa-users text-slate-500 text-xs mr-2"></i>
+                    <select id="class-selector" onchange="changeClass(this.value)" class="bg-transparent font-bold text-sm w-full outline-none text-slate-800">
+                        <!-- Options JS -->
                     </select>
-                    <button onclick="addNewClass()" class="ml-2 bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs" title="Tambah Kelas Baru">
-                        <i class="fas fa-plus"></i>
-                    </button>
                 </div>
-                
-                <div id="save-status" class="text-xs text-gray-400 flex items-center gap-1 hidden md:flex">
-                    <span class="status-indicator bg-green-500"></span> Online
+                <button onclick="addNewClass()" class="bg-slate-800 text-white w-8 h-8 rounded flex items-center justify-center shadow">
+                    <i class="fas fa-plus text-xs"></i>
+                </button>
+            </div>
+            <div class="flex flex-col items-end ml-2">
+                <div id="save-status" class="text-[10px] font-bold text-gray-400 px-2 mb-1">
+                    <span class="status-dot bg-gray-300"></span>...
                 </div>
             </div>
-            
-            <div class="flex space-x-1 bg-slate-800 p-1 rounded-lg overflow-x-auto w-full md:w-auto justify-center">
-                <button onclick="switchTab('data')" id="btn-data" class="px-3 py-2 rounded font-medium transition text-sm tab-active whitespace-nowrap">
-                    <i class="fas fa-database mr-1"></i> Data Siswa
-                </button>
-                <button onclick="switchTab('absensi')" id="btn-absensi" class="px-3 py-2 rounded font-medium transition text-sm tab-inactive text-gray-300 whitespace-nowrap">
-                    <i class="fas fa-calendar-check mr-1"></i> Absensi
-                </button>
-                <button onclick="switchTab('nilai')" id="btn-nilai" class="px-3 py-2 rounded font-medium transition text-sm tab-inactive text-gray-300 whitespace-nowrap">
-                    <i class="fas fa-chart-bar mr-1"></i> Nilai
-                </button>
+        </div>
+        <!-- Sync Info Bar -->
+        <div class="flex justify-between items-center bg-slate-50 px-2 py-1 rounded border border-slate-200">
+            <div class="text-[10px] text-slate-500">
+                <i class="fas fa-link mr-1"></i>Kode Sync: <span id="current-school-code" class="font-bold text-blue-600">...</span>
             </div>
-
-            <div class="flex gap-2">
-                 <button onclick="deleteCurrentClass()" class="px-3 py-2 bg-red-700 rounded hover:bg-red-600 text-xs text-white" title="Hapus Kelas Ini">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-                <button onclick="window.print()" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold shadow text-sm">
-                    <i class="fas fa-print mr-1"></i> PDF
-                </button>
-            </div>
+            <button onclick="changeSchoolCode()" class="text-[10px] text-blue-500 underline">Ganti Kode</button>
         </div>
     </div>
 
-    <!-- MAIN CONTAINER -->
-    <div class="max-w-[98%] mx-auto mt-4 mb-10 bg-white p-6 rounded-lg shadow-xl min-h-screen print-container">
+    <!-- MAIN CONTENT -->
+    <div class="max-w-5xl mx-auto bg-white min-h-screen container-custom print-container">
 
-        <!-- KOP / HEADER LAPORAN -->
-        <div class="grid grid-cols-2 gap-8 mb-6 border-b-4 border-double border-black pb-4">
+        <!-- KOP LAPORAN -->
+        <div class="hidden md:grid grid-cols-2 gap-8 mb-6 border-b-2 border-black pb-4 pt-4">
             <div>
-                <h2 class="text-2xl font-bold uppercase tracking-wider mb-1" id="disp-school">NAMA SEKOLAH</h2>
-                <div class="mt-2 grid grid-cols-[100px_10px_1fr] gap-y-1 text-sm">
-                    <span>Mata Pelajaran</span> <span>:</span> <span id="disp-mapel" class="font-bold">-</span>
-                    <span>Kelas / Fase</span> <span>:</span> <span id="disp-kelas" class="font-bold bg-yellow-100 px-1">-</span>
+                <h2 class="text-xl font-bold uppercase" id="disp-school">SEKOLAH</h2>
+                <div class="text-sm mt-1">
+                    <p>Mapel: <span id="disp-mapel" class="font-bold">-</span></p>
+                    <p>Kelas: <span id="disp-kelas" class="font-bold">-</span></p>
                 </div>
             </div>
-            <div class="text-right flex flex-col justify-end">
-                <div class="grid grid-cols-[1fr_10px_150px] gap-y-1 text-sm text-left justify-self-end">
-                    <span>Semester / TP</span> <span>:</span> <span id="disp-semester">-</span>
-                    <span>Guru Pengampu</span> <span>:</span> <span id="disp-guru">-</span>
-                </div>
+            <div class="text-right text-sm">
+                <p>Semester: <span id="disp-semester">-</span></p>
+                <p>Guru: <span id="disp-guru">-</span></p>
             </div>
         </div>
 
-        <!-- ================= TAB 1: DATA KELAS (INPUT) ================= -->
-        <div id="tab-data" class="block">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 no-print bg-gray-50 p-4 rounded border">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500">Nama Kelas</label>
-                    <input type="text" id="in-classname" oninput="debouncedUpdateInfo()" class="w-full border p-2 rounded focus:ring-2 ring-blue-500 bg-white font-bold text-blue-800" placeholder="Contoh: X TKJ 1">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500">Nama Sekolah</label>
-                    <input type="text" id="in-school" oninput="debouncedUpdateInfo()" class="w-full border p-2 rounded focus:ring-2 ring-blue-500 bg-white" placeholder="Nama Sekolah">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500">Mata Pelajaran</label>
-                    <input type="text" id="in-mapel" oninput="debouncedUpdateInfo()" class="w-full border p-2 rounded focus:ring-2 ring-blue-500 bg-white">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500">Semester / TP</label>
-                    <input type="text" id="in-semester" oninput="debouncedUpdateInfo()" class="w-full border p-2 rounded focus:ring-2 ring-blue-500 bg-white" placeholder="Cth: Genap / 2024-2025">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500">Guru Pengampu</label>
-                    <input type="text" id="in-guru" oninput="debouncedUpdateInfo()" class="w-full border p-2 rounded focus:ring-2 ring-blue-500 bg-white">
+        <!-- TAB 1: DATA SISWA -->
+        <div id="tab-data" class="block pb-20">
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4 no-print">
+                <h3 class="text-sm font-bold text-blue-800 mb-2"><i class="fas fa-cog mr-1"></i> Identitas Kelas</h3>
+                <div class="grid grid-cols-1 gap-2 text-sm">
+                    <input type="text" id="in-classname" oninput="debouncedUpdateInfo()" class="border p-2 rounded w-full" placeholder="Nama Kelas (X TKJ 1)">
+                    <input type="text" id="in-mapel" oninput="debouncedUpdateInfo()" class="border p-2 rounded w-full" placeholder="Mata Pelajaran">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="in-semester" oninput="debouncedUpdateInfo()" class="border p-2 rounded w-full" placeholder="Semester">
+                        <input type="text" id="in-guru" oninput="debouncedUpdateInfo()" class="border p-2 rounded w-full" placeholder="Nama Guru">
+                    </div>
+                     <input type="text" id="in-school" oninput="debouncedUpdateInfo()" class="border p-2 rounded w-full" placeholder="Nama Sekolah">
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4 no-print">
-                <h3 class="font-bold text-lg border-b-2 border-blue-500">Daftar Siswa</h3>
-                
+            <div class="flex justify-between items-center mb-2 no-print">
+                <h3 class="font-bold text-gray-700">Siswa</h3>
                 <div class="flex gap-2">
-                    <button onclick="exportToExcel()" class="bg-green-700 text-white px-3 py-2 rounded hover:bg-green-600 text-sm flex items-center shadow">
-                        <i class="fas fa-file-excel mr-2"></i> Export
-                    </button>
-                    
-                    <label for="excel-input" class="bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-500 text-sm flex items-center shadow cursor-pointer">
-                        <i class="fas fa-file-import mr-2"></i> Import
+                    <label class="bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center shadow cursor-pointer">
+                        <i class="fas fa-file-excel mr-1"></i> Import
+                        <input type="file" id="excel-input" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(this)">
                     </label>
-                    <input type="file" id="excel-input" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(this)">
-
-                    <button onclick="addStudent()" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-500 text-sm flex items-center shadow ml-2">
-                        <i class="fas fa-plus mr-2"></i> Manual
+                    <button onclick="addStudent()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs shadow">
+                        <i class="fas fa-user-plus mr-1"></i> Tambah
                     </button>
                 </div>
             </div>
             
-            <table class="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="border p-2 w-10">No</th>
-                        <th class="border p-2 w-28">NIS</th>
-                        <th class="border p-2">Nama Lengkap Siswa</th>
-                        <th class="border p-2 w-20 text-center">L/P</th>
-                        <th class="border p-2 w-16 text-center no-print">Hapus</th>
-                    </tr>
-                </thead>
-                <tbody id="student-list-body"></tbody>
-            </table>
+            <div class="overflow-x-auto bg-white border rounded shadow-sm">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                        <tr>
+                            <th class="p-2 w-8 text-center">No</th>
+                            <th class="p-2 min-w-[150px]">Nama Siswa</th>
+                            <th class="p-2 w-16 text-center">L/P</th>
+                            <th class="p-2 w-10 text-center no-print"><i class="fas fa-trash"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-list-body" class="divide-y"></tbody>
+                </table>
+            </div>
+            
+            <div class="mt-8 no-print flex gap-2 justify-center">
+                 <button onclick="exportToExcel()" class="bg-gray-600 text-white px-4 py-2 rounded text-xs shadow"><i class="fas fa-download mr-1"></i> Backup Excel</button>
+                 <button onclick="deleteCurrentClass()" class="bg-red-100 text-red-600 px-4 py-2 rounded text-xs"><i class="fas fa-trash mr-1"></i> Hapus Kelas</button>
+            </div>
         </div>
 
-        <!-- ================= TAB 2: ABSENSI ================= -->
-        <div id="tab-absensi" class="hidden">
-            <h2 class="text-center text-xl font-bold mb-4 uppercase underline">Rekap Absensi: <span class="print-class-name"></span></h2>
+        <!-- TAB 2: ABSENSI -->
+        <div id="tab-absensi" class="hidden pb-20">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Absensi</h3>
+                <div class="text-xs text-gray-500">Klik tanggal untuk ubah</div>
+            </div>
             
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-black text-sm">
+            <div class="overflow-x-auto border rounded shadow-sm">
+                <table class="w-full border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-200 text-xs">
-                            <th rowspan="2" class="border border-black p-1 w-8">No</th>
-                            <th rowspan="2" class="border border-black p-1 text-left min-w-[150px] px-2">Nama Siswa</th>
-                            <th colspan="30" class="border border-black p-1 text-center">Tanggal / Pertemuan Ke-</th>
-                            <th colspan="4" class="border border-black p-1">Total</th>
+                        <tr class="bg-slate-100">
+                            <th rowspan="2" class="border p-1 sticky left-0 bg-slate-100 z-10 w-8">No</th>
+                            <th rowspan="2" class="border p-1 sticky left-8 bg-slate-100 z-10 min-w-[120px] text-left">Nama</th>
+                            <th colspan="30" class="border p-1 text-center">Pertemuan</th>
+                            <th colspan="4" class="border p-1">Total</th>
                         </tr>
-                        <tr class="bg-gray-100 text-[9px] text-center">
-                            <script>for(let i=1; i<=30; i++) document.write(`<th class="border border-black p-0 w-4">${i}</th>`);</script>
-                            <th class="border border-black p-1 bg-yellow-100 w-8 font-bold" title="Sakit">S</th>
-                            <th class="border border-black p-1 bg-blue-100 w-8 font-bold" title="Izin">I</th>
-                            <th class="border border-black p-1 bg-red-100 w-8 font-bold" title="Alpha">A</th>
-                            <th class="border border-black p-1 bg-purple-200 w-8 font-bold" title="Bolos">B</th>
+                        <tr class="bg-slate-50 text-[10px] text-center">
+                            <script>for(let i=1; i<=30; i++) document.write(`<th class="border p-1 min-w-[20px]">${i}</th>`);</script>
+                            <th class="border p-1 bg-yellow-100">S</th>
+                            <th class="border p-1 bg-blue-100">I</th>
+                            <th class="border p-1 bg-red-100">A</th>
+                            <th class="border p-1 bg-purple-100">B</th>
                         </tr>
                     </thead>
                     <tbody id="absensi-body"></tbody>
                 </table>
             </div>
-            <div class="mt-2 text-xs italic no-print text-gray-600 flex flex-wrap gap-4">
-                <span><span class="inline-block w-3 h-3 bg-yellow-200 border border-black"></span> S = Sakit</span>
-                <span><span class="inline-block w-3 h-3 bg-blue-200 border border-black"></span> I = Izin</span>
-                <span><span class="inline-block w-3 h-3 bg-red-200 border border-black"></span> A = Alpha</span>
-                <span><span class="inline-block w-3 h-3 bg-purple-300 border border-black"></span> B = Bolos</span>
-            </div>
         </div>
 
-        <!-- ================= TAB 3: NILAI ================= -->
-        <div id="tab-nilai" class="hidden">
-            <h2 class="text-center text-xl font-bold mb-4 uppercase underline">Daftar Nilai: <span class="print-class-name"></span></h2>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-black text-sm">
+        <!-- TAB 3: NILAI -->
+        <div id="tab-nilai" class="hidden pb-20">
+            <h3 class="font-bold text-lg mb-4">Input Nilai</h3>
+            <div class="overflow-x-auto border rounded shadow-sm">
+                <table class="w-full border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-200 text-xs">
-                            <th rowspan="2" class="border border-black p-1 w-8">No</th>
-                            <th rowspan="2" class="border border-black p-1 text-left min-w-[200px] px-2">Nama Siswa</th>
-                            <th colspan="4" class="border border-black p-1">Nilai Harian (LM)</th>
-                            <th rowspan="2" class="border border-black p-1 w-12 bg-gray-50">Rata</th>
-                            <th rowspan="2" class="border border-black p-1 w-12">STS</th>
-                            <th rowspan="2" class="border border-black p-1 w-12">SAS</th>
-                            <th rowspan="2" class="border border-black p-1 w-12 bg-blue-50 font-bold">NA</th>
-                            <th rowspan="2" class="border border-black p-1 min-w-[100px]">Predikat</th>
+                        <tr class="bg-slate-100">
+                            <th rowspan="2" class="border p-1 sticky left-0 bg-slate-100 z-10 w-8">No</th>
+                            <th rowspan="2" class="border p-1 sticky left-8 bg-slate-100 z-10 min-w-[120px] text-left">Nama</th>
+                            <th colspan="4" class="border p-1">Harian (LM)</th>
+                            <th rowspan="2" class="border p-1 bg-gray-50 w-10">Rata</th>
+                            <th rowspan="2" class="border p-1 w-10">STS</th>
+                            <th rowspan="2" class="border p-1 w-10">SAS</th>
+                            <th rowspan="2" class="border p-1 bg-blue-50 font-bold w-10">NA</th>
+                            <th rowspan="2" class="border p-1 min-w-[80px]">Pred</th>
                         </tr>
-                        <tr class="bg-gray-100 text-[10px]">
-                            <th class="border border-black p-1 w-10">LM1</th>
-                            <th class="border border-black p-1 w-10">LM2</th>
-                            <th class="border border-black p-1 w-10">LM3</th>
-                            <th class="border border-black p-1 w-10">LM4</th>
+                        <tr class="bg-slate-50 text-[10px]">
+                            <th class="border p-1 w-8">1</th>
+                            <th class="border p-1 w-8">2</th>
+                            <th class="border p-1 w-8">3</th>
+                            <th class="border p-1 w-8">4</th>
                         </tr>
                     </thead>
                     <tbody id="nilai-body"></tbody>
                 </table>
             </div>
-
-            <div class="mt-12 grid grid-cols-3 gap-8 text-center break-inside-avoid text-sm">
-                <div>
-                    <p>Mengetahui,</p>
-                    <p class="font-bold">Kepala Sekolah</p>
-                    <br><br><br>
-                    <p class="font-bold underline">_______________________</p>
-                </div>
-                <div></div>
-                <div>
-                    <p>Kota Guru, <span id="date-now"></span></p>
-                    <p class="font-bold">Guru Pengampu</p>
-                    <br><br><br>
-                    <p class="font-bold underline" id="sign-guru">-</p>
-                </div>
-            </div>
         </div>
 
     </div>
 
-    <!-- JAVASCRIPT LOGIC (Firebase Module) -->
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav no-print">
+        <button onclick="switchTab('data')" id="nav-data" class="nav-item active">
+            <i class="fas fa-user-graduate"></i>
+            <span>Data</span>
+        </button>
+        <button onclick="switchTab('absensi')" id="nav-absensi" class="nav-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Absen</span>
+        </button>
+        <button onclick="switchTab('nilai')" id="nav-nilai" class="nav-item">
+            <i class="fas fa-chart-bar"></i>
+            <span>Nilai</span>
+        </button>
+        <button onclick="window.print()" class="nav-item">
+            <i class="fas fa-print"></i>
+            <span>PDF</span>
+        </button>
+    </div>
+
     <script type="module">
-        // Menggunakan library versi 11.6.1 agar kompatibel dengan kode, namun config tetap dari user
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- 1. CONFIGURATION DARI USER ---
+        // CONFIG (Milik User)
         const firebaseConfig = {
             apiKey: "AIzaSyAXOHHI9ytfcjK1sc4ZoErSheJ3zPyM3u4",
             authDomain: "x-casing-482715-v7.firebaseapp.com",
@@ -286,322 +275,235 @@
             measurementId: "G-VP8Q3DSHMD"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // State Global
-        let currentUser = null;
-        window.appState = {
-            classes: [],
-            activeClassId: null,
-            isLoading: false
-        };
+        let schoolCode = localStorage.getItem('gurupro_school_code');
+        window.appState = { classes: [], activeClassId: null };
 
-        // --- 2. AUTHENTICATION (Anonymous Login) ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log("Logged in as:", user.uid);
-                currentUser = user;
-                await fetchClasses();
-            } else {
-                currentUser = null;
-                // Auto login anonymously
-                signInAnonymously(auth).catch((error) => {
-                    console.error("Auth Error:", error);
-                    showLoading(false);
-                    Swal.fire("Error Koneksi", "Pastikan Anda sudah mengaktifkan 'Anonymous Auth' di Firebase Console.", "error");
+        // INITIALIZE
+        async function initApp() {
+            if(!schoolCode) {
+                showLoading(false);
+                const { value: code } = await Swal.fire({
+                    title: 'Sinkronisasi Perangkat',
+                    text: 'Buat/Masukkan Kode Unik agar data terhubung di semua perangkat (Misal: smk123)',
+                    input: 'text',
+                    inputPlaceholder: 'Kode Unik (Wajib Sama di HP & Laptop)',
+                    allowOutsideClick: false,
+                    inputValidator: (value) => { return !value && 'Kode tidak boleh kosong!' }
                 });
-            }
-        });
-
-        // --- 3. FIRESTORE LOGIC ---
-        
-        async function fetchClasses() {
-            if(!currentUser) return;
-            showLoading(true);
-
-            try {
-                // Mengambil data dari collection 'classes' milik user ini
-                const q = collection(db, 'users', currentUser.uid, 'classes');
-                const querySnapshot = await getDocs(q);
-                
-                window.appState.classes = [];
-                querySnapshot.forEach((doc) => {
-                    window.appState.classes.push(doc.data());
-                });
-
-                if(window.appState.classes.length === 0) {
-                    await createDefaultClass();
-                } else {
-                    if(!window.appState.activeClassId) {
-                        window.appState.activeClassId = window.appState.classes[0].id;
-                    }
+                if(code) {
+                    schoolCode = code.trim();
+                    localStorage.setItem('gurupro_school_code', schoolCode);
                 }
+            }
+            
+            document.getElementById('current-school-code').innerText = schoolCode;
+            showLoading(true);
+            
+            // Login Anonim (Hanya untuk akses Firebase)
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    await fetchClasses();
+                } else {
+                    signInAnonymously(auth).catch(e => Swal.fire("Error Auth", e.message, "error"));
+                }
+            });
+        }
+
+        // DATABASE LOGIC (USING SCHOOL CODE, NOT UID)
+        async function fetchClasses() {
+            try {
+                // PATH DIUBAH: schools/{schoolCode}/classes
+                const q = collection(db, 'schools', schoolCode, 'classes');
+                const querySnapshot = await getDocs(q);
+                window.appState.classes = [];
+                querySnapshot.forEach((doc) => window.appState.classes.push(doc.data()));
+
+                if(window.appState.classes.length === 0) await createDefaultClass();
+                else if(!window.appState.activeClassId) window.appState.activeClassId = window.appState.classes[0].id;
 
                 renderClassSelector();
                 renderAll();
+                updateOnlineStatus(true);
             } catch (e) {
-                console.error("Fetch Error:", e);
-                // Jika error permission, biasanya karena Firestore Rules belum di set public/test mode
-                if(e.code === 'permission-denied') {
-                     Swal.fire("Akses Ditolak", "Database terkunci. Pastikan Firestore Rules dalam 'Test Mode'.", "error");
-                } else {
-                     Swal.fire("Error", "Gagal mengambil data kelas: " + e.message, "error");
-                }
+                console.error(e);
+                updateOnlineStatus(false);
+                Swal.fire("Koneksi", "Gagal mengambil data. Pastikan internet lancar.", "error");
             } finally {
                 showLoading(false);
             }
         }
 
         async function createDefaultClass() {
-            const defaultClass = {
+            const defClass = {
                 id: 'cls_' + Date.now(),
                 name: "Kelas Percobaan",
-                info: {
-                    school: "SMK NEGERI CONTOH",
-                    mapel: "Mata Pelajaran",
-                    guru: "Nama Guru, S.Pd",
-                    semester: "Ganjil / 2024-2025"
-                },
-                students: [
-                    { id: 1, nis: "101", name: "Siswa Contoh", gender: "L", absensi: Array(30).fill(""), nilai: {lm1:0,lm2:0,lm3:0,lm4:0,sts:0,sas:0} }
-                ]
+                info: { school: "NAMA SEKOLAH", mapel: "Mapel", guru: "Nama Guru", semester: "Ganjil" },
+                students: [{ id: 1, nis: "123", name: "Siswa 1", gender: "L", absensi: Array(30).fill(""), nilai: {lm1:0,lm2:0,lm3:0,lm4:0,sts:0,sas:0} }]
             };
-            
-            await saveClassToFirestore(defaultClass);
-            window.appState.classes.push(defaultClass);
-            window.appState.activeClassId = defaultClass.id;
+            await saveClassToFirestore(defClass);
+            window.appState.classes.push(defClass);
+            window.appState.activeClassId = defClass.id;
         }
 
         async function saveClassToFirestore(classObj) {
-            if(!currentUser) return;
-            showStatus("Menyimpan...", "text-yellow-500");
-            
+            updateOnlineStatus(false);
             try {
-                const docRef = doc(db, 'users', currentUser.uid, 'classes', classObj.id);
-                const dataToSave = JSON.parse(JSON.stringify(classObj));
-                await setDoc(docRef, dataToSave);
-                showStatus("Tersimpan (Online)", "text-green-500");
+                // PATH DIUBAH: schools/{schoolCode}/classes
+                await setDoc(doc(db, 'schools', schoolCode, 'classes', classObj.id), JSON.parse(JSON.stringify(classObj)));
+                updateOnlineStatus(true);
             } catch (e) {
-                console.error("Save Error:", e);
-                showStatus("Gagal Menyimpan", "text-red-500");
+                console.error(e);
+                document.getElementById('save-status').innerHTML = '<span class="status-dot bg-red-500"></span>Error Save';
             }
         }
 
         async function deleteClassFromFirestore(classId) {
-            if(!currentUser) return;
-            const docRef = doc(db, 'users', currentUser.uid, 'classes', classId);
-            await deleteDoc(docRef);
+            await deleteDoc(doc(db, 'schools', schoolCode, 'classes', classId));
         }
 
-        // --- 4. GLOBAL FUNCTIONS ---
+        // GLOBAL HELPERS
+        window.changeSchoolCode = () => {
+            localStorage.removeItem('gurupro_school_code');
+            location.reload();
+        }
 
         window.getActiveClass = () => window.appState.classes.find(c => c.id === window.appState.activeClassId);
-
-        window.changeClass = (classId) => {
-            window.appState.activeClassId = classId;
-            renderAll();
-        }
+        window.changeClass = (id) => { window.appState.activeClassId = id; renderAll(); }
 
         window.addNewClass = async () => {
-            const { value: text } = await Swal.fire({
-                input: 'text', inputLabel: 'Nama Kelas Baru', inputPlaceholder: 'Contoh: XI RPL 2', showCancelButton: true
-            });
+            const { value: text } = await Swal.fire({ input: 'text', inputPlaceholder: 'Nama Kelas (misal: XI TSM 2)', showCancelButton: true });
             if (text) {
                 const newClass = {
-                    id: 'cls_' + Date.now(),
-                    name: text,
-                    info: { ...window.getActiveClass().info },
-                    students: []
+                    id: 'cls_' + Date.now(), name: text,
+                    info: { ...window.getActiveClass().info }, students: []
                 };
                 window.appState.classes.push(newClass);
                 window.appState.activeClassId = newClass.id;
                 await saveClassToFirestore(newClass);
-                renderClassSelector();
-                renderAll();
+                renderClassSelector(); renderAll();
             }
         }
 
         window.deleteCurrentClass = () => {
-            if(window.appState.classes.length <= 1) {
-                Swal.fire('Error', 'Minimal harus menyisakan satu kelas.', 'error');
-                return;
-            }
-            const current = window.getActiveClass();
-            Swal.fire({
-                title: `Hapus ${current.name}?`, text: "Data akan dihapus permanen dari Database!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Hapus!'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
+            if(window.appState.classes.length <= 1) return Swal.fire('Gagal', 'Sisakan minimal 1 kelas.', 'error');
+            Swal.fire({ title: 'Hapus Kelas?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya' })
+            .then(async (res) => {
+                if(res.isConfirmed) {
                     showLoading(true);
-                    await deleteClassFromFirestore(current.id);
+                    await deleteClassFromFirestore(window.appState.activeClassId);
                     window.appState.classes = window.appState.classes.filter(c => c.id !== window.appState.activeClassId);
                     window.appState.activeClassId = window.appState.classes[0].id;
-                    renderClassSelector();
-                    renderAll();
-                    showLoading(false);
+                    renderClassSelector(); renderAll(); showLoading(false);
                 }
-            })
+            });
         }
 
         let debounceTimer;
         window.debouncedUpdateInfo = () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => { window.updateClassInfo(); }, 1000);
-        }
-
-        window.updateClassInfo = () => {
-            const cls = window.getActiveClass();
-            cls.name = document.getElementById('in-classname').value;
-            cls.info.school = document.getElementById('in-school').value;
-            cls.info.mapel = document.getElementById('in-mapel').value;
-            cls.info.guru = document.getElementById('in-guru').value;
-            cls.info.semester = document.getElementById('in-semester').value;
-            
-            const selector = document.getElementById('class-selector');
-            selector.options[selector.selectedIndex].text = cls.name;
-            updateHeaders(cls);
-            saveClassToFirestore(cls);
+            debounceTimer = setTimeout(() => {
+                const cls = window.getActiveClass();
+                cls.name = document.getElementById('in-classname').value;
+                cls.info.school = document.getElementById('in-school').value;
+                cls.info.mapel = document.getElementById('in-mapel').value;
+                cls.info.guru = document.getElementById('in-guru').value;
+                cls.info.semester = document.getElementById('in-semester').value;
+                const selector = document.getElementById('class-selector');
+                if(selector.selectedIndex >= 0) selector.options[selector.selectedIndex].text = cls.name;
+                updatePrintHeaders(cls);
+                saveClassToFirestore(cls);
+            }, 1000);
         }
 
         window.addStudent = async () => {
             const cls = window.getActiveClass();
             cls.students.push({
                 id: Date.now(), nis: "", name: "Siswa Baru", gender: "",
-                absensi: Array(30).fill(""), nilai: {lm1:0, lm2:0, lm3:0, lm4:0, sts:0, sas:0}
+                absensi: Array(30).fill(""), nilai: {lm1:0,lm2:0,lm3:0,lm4:0,sts:0,sas:0}
             });
-            renderAll();
-            await saveClassToFirestore(cls);
+            renderAll(); await saveClassToFirestore(cls);
         }
 
-        window.confirmDeleteStudent = (index) => {
-            const cls = window.getActiveClass();
-            Swal.fire({
-                title: 'Hapus Siswa?', text: `Hapus "${cls.students[index].name}"?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    cls.students.splice(index, 1);
-                    renderAll();
-                    await saveClassToFirestore(cls);
+        window.confirmDeleteStudent = (idx) => {
+            Swal.fire({ title: 'Hapus?', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya' })
+            .then(async (res) => {
+                if(res.isConfirmed) {
+                    window.getActiveClass().students.splice(idx, 1);
+                    renderAll(); await saveClassToFirestore(window.getActiveClass());
                 }
             });
         }
 
         let saveTimer;
-        function debouncedSave(cls) {
-            showStatus("Mengetik...", "text-blue-500");
+        const debouncedSave = (cls) => {
+            document.getElementById('save-status').innerHTML = '<span class="status-dot bg-yellow-400"></span>Saving...';
             clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => { saveClassToFirestore(cls); }, 1500);
+            saveTimer = setTimeout(() => saveClassToFirestore(cls), 1500);
         }
 
-        window.updateStudent = (index, field, value) => {
+        window.updateStudent = (idx, field, val) => {
             const cls = window.getActiveClass();
-            cls.students[index][field] = value;
-            debouncedSave(cls); 
-        }
-
-        window.updateNilai = (index, key, value) => {
-            const cls = window.getActiveClass();
-            cls.students[index].nilai[key] = value;
-            renderNilaiTable(cls); 
+            cls.students[idx][field] = val;
             debouncedSave(cls);
         }
 
-        window.cycleAbsensi = (studentIndex, dateIndex) => {
+        window.updateNilai = (idx, field, val) => {
             const cls = window.getActiveClass();
-            const cycles = ["", "S", "I", "A", "B"]; 
-            let current = cls.students[studentIndex].absensi[dateIndex] || "";
-            let nextIndex = (cycles.indexOf(current) + 1) % cycles.length;
-            cls.students[studentIndex].absensi[dateIndex] = cycles[nextIndex];
-            renderAbsensiTable(cls);
-            saveClassToFirestore(cls);
+            cls.students[idx].nilai[field] = val;
+            renderNilaiTable(cls); debouncedSave(cls);
         }
 
-        // --- EXCEL ---
+        window.cycleAbsensi = (sIdx, dIdx) => {
+            const cls = window.getActiveClass();
+            const cycles = ["", "S", "I", "A", "B"];
+            const curr = cls.students[sIdx].absensi[dIdx] || "";
+            cls.students[sIdx].absensi[dIdx] = cycles[(cycles.indexOf(curr)+1)%cycles.length];
+            renderAbsensiTable(cls); saveClassToFirestore(cls);
+        }
+
         window.exportToExcel = () => {
             const cls = window.getActiveClass();
-            const exportData = cls.students.map((s, i) => ({
-                No: i + 1, NIS: s.nis, Nama: s.name, Gender: s.gender,
-                Nilai_Akhir: calculateNA(s.nilai).na
-            }));
-            const ws = XLSX.utils.json_to_sheet(exportData);
+            const data = cls.students.map((s,i) => ({ No:i+1, NIS:s.nis, Nama:s.name, Gender:s.gender, Nilai_Akhir: calculateNA(s.nilai).NA }));
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Siswa " + cls.name);
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
             XLSX.writeFile(wb, `Data_${cls.name}.xlsx`);
         }
 
         window.importFromExcel = (input) => {
             const file = input.files[0];
-            if (!file) return;
+            if(!file) return;
             const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                    
-                    const cls = window.getActiveClass();
-                    let importedCount = 0;
-                    for(let i=1; i<jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if(!row || row.length === 0) continue;
-                        const nis = row[1] || "";
-                        const nama = row[2] || "";
-                        if(nama) {
-                            cls.students.push({
-                                id: Date.now() + i, nis: nis.toString(), name: nama.toString(), gender: (row[3]||"L").toString(),
-                                absensi: Array(30).fill(""), nilai: {lm1:0,lm2:0,lm3:0,lm4:0,sts:0,sas:0}
-                            });
-                            importedCount++;
-                        }
+            reader.onload = async (e) => {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+                const cls = window.getActiveClass();
+                let count = 0;
+                rows.slice(1).forEach(r => {
+                    if(r[2]) {
+                        cls.students.push({
+                            id: Date.now()+count, nis: (r[1]||"").toString(), name: r[2].toString(), gender: (r[3]||"L").toString(),
+                            absensi: Array(30).fill(""), nilai: {lm1:0,lm2:0,lm3:0,lm4:0,sts:0,sas:0}
+                        });
+                        count++;
                     }
-                    renderAll();
-                    await saveClassToFirestore(cls);
-                    Swal.fire('Sukses', `${importedCount} siswa diimport!`, 'success');
-                } catch (error) {
-                    console.error(error);
-                    Swal.fire('Error', 'Gagal membaca file Excel.', 'error');
-                }
+                });
+                renderAll(); await saveClassToFirestore(cls);
+                Swal.fire('Sukses', `${count} siswa masuk.`, 'success');
                 input.value = "";
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // --- RENDER ---
+        // RENDERERS
         window.renderAll = () => {
             const cls = window.getActiveClass();
             if(!cls) return;
-            updateHeaders(cls);
-            updateInputs(cls);
-            document.querySelectorAll('.print-class-name').forEach(el => el.innerText = cls.name);
-            renderStudentList(cls);
-            renderAbsensiTable(cls);
-            renderNilaiTable(cls);
-        }
-
-        window.renderClassSelector = () => {
-            const select = document.getElementById('class-selector');
-            select.innerHTML = '';
-            window.appState.classes.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.text = c.name;
-                if(c.id === window.appState.activeClassId) option.selected = true;
-                select.appendChild(option);
-            });
-        }
-
-        function updateHeaders(cls) {
-            document.getElementById('disp-school').innerText = cls.info.school;
-            document.getElementById('disp-mapel').innerText = cls.info.mapel;
-            document.getElementById('disp-kelas').innerText = cls.name;
-            document.getElementById('disp-guru').innerText = cls.info.guru;
-            document.getElementById('disp-semester').innerText = cls.info.semester;
-            document.getElementById('sign-guru').innerText = cls.info.guru;
-        }
-
-        function updateInputs(cls) {
+            
             if(document.activeElement.tagName !== 'INPUT') {
                 document.getElementById('in-classname').value = cls.name;
                 document.getElementById('in-school').value = cls.info.school;
@@ -609,97 +511,104 @@
                 document.getElementById('in-guru').value = cls.info.guru;
                 document.getElementById('in-semester').value = cls.info.semester;
             }
-        }
+            updatePrintHeaders(cls);
 
-        function renderStudentList(cls) {
-            const tbody = document.getElementById('student-list-body');
-            let html = '';
-            cls.students.forEach((s, i) => {
-                html += `
-                <tr class="hover:bg-gray-50">
-                    <td class="border p-2 text-center">${i+1}</td>
-                    <td class="border p-2"><input type="text" value="${s.nis}" oninput="window.updateStudent(${i}, 'nis', this.value)" class="w-full text-center editable" placeholder="NIS"></td>
-                    <td class="border p-2"><input type="text" value="${s.name}" oninput="window.updateStudent(${i}, 'name', this.value)" class="w-full font-bold editable" placeholder="Nama Siswa"></td>
-                    <td class="border p-2"><input type="text" value="${s.gender}" oninput="window.updateStudent(${i}, 'gender', this.value)" class="w-full text-center editable uppercase" placeholder="L/P"></td>
-                    <td class="border p-2 text-center no-print">
-                        <button onclick="window.confirmDeleteStudent(${i})" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-2 py-1 rounded transition"><i class="fas fa-trash-alt"></i></button>
+            let h = '';
+            cls.students.forEach((s,i) => {
+                h += `<tr class="border-b hover:bg-slate-50">
+                    <td class="p-2 text-center">${i+1}</td>
+                    <td class="p-2"><input value="${s.name}" oninput="window.updateStudent(${i},'name',this.value)" class="w-full bg-transparent font-medium outline-none">
+                        <div class="text-[10px] text-gray-400"><input value="${s.nis}" oninput="window.updateStudent(${i},'nis',this.value)" class="bg-transparent outline-none w-20" placeholder="NIS"></div>
                     </td>
+                    <td class="p-2 text-center"><input value="${s.gender}" oninput="window.updateStudent(${i},'gender',this.value)" class="w-8 text-center bg-transparent uppercase outline-none"></td>
+                    <td class="p-2 text-center no-print"><button onclick="window.confirmDeleteStudent(${i})" class="text-red-400"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             });
-            if(cls.students.length === 0) html = '<tr><td colspan="5" class="text-center p-8 text-gray-500 italic">Belum ada siswa.</td></tr>';
-            tbody.innerHTML = html;
+            document.getElementById('student-list-body').innerHTML = h || '<tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Belum ada siswa</td></tr>';
+            renderAbsensiTable(cls);
+            renderNilaiTable(cls);
         }
 
         function renderAbsensiTable(cls) {
-            const tbody = document.getElementById('absensi-body');
-            let html = '';
-            cls.students.forEach((s, i) => {
-                let counts = { S:0, I:0, A:0, B:0 };
-                s.absensi.forEach(x => { if(counts[x] !== undefined) counts[x]++ });
-                html += `<tr><td class="border border-black p-1 text-center">${i+1}</td><td class="border border-black p-1 px-2 whitespace-nowrap">${s.name}</td>`;
-                for(let d=0; d<30; d++) {
-                    let val = s.absensi[d] || ".";
-                    let colorClass = val === 'S' ? 'bg-yellow-200' : val === 'I' ? 'bg-blue-200' : val === 'A' ? 'bg-red-200' : val === 'B' ? 'bg-purple-300 font-bold' : '';
-                    html += `<td onclick="window.cycleAbsensi(${i}, ${d})" class="border border-black p-0 text-center cursor-pointer hover:bg-gray-200 select-none ${colorClass}" style="font-size:9px; min-width: 15px;">${val}</td>`;
+            let h = '';
+            cls.students.forEach((s,i) => {
+                let c = {S:0, I:0, A:0, B:0};
+                s.absensi.forEach(x => {if(c[x]!==undefined)c[x]++});
+                h += `<tr><td class="border p-1 text-center bg-slate-50 sticky left-0 z-10">${i+1}</td><td class="border p-1 px-2 whitespace-nowrap sticky left-8 bg-slate-50 z-10">${s.name}</td>`;
+                for(let d=0;d<30;d++) {
+                    let v = s.absensi[d]||".";
+                    let col = v==='S'?'bg-yellow-200':v==='I'?'bg-blue-200':v==='A'?'bg-red-200':v==='B'?'bg-purple-300 font-bold':'';
+                    h += `<td onclick="window.cycleAbsensi(${i},${d})" class="border p-0 text-center cursor-pointer select-none ${col}" style="min-width:24px;height:24px">${v}</td>`;
                 }
-                html += `<td class="border border-black p-1 text-center bg-yellow-50 font-bold text-xs">${counts.S||''}</td><td class="border border-black p-1 text-center bg-blue-50 font-bold text-xs">${counts.I||''}</td><td class="border border-black p-1 text-center bg-red-50 font-bold text-xs">${counts.A||''}</td><td class="border border-black p-1 text-center bg-purple-100 font-bold text-xs text-purple-900">${counts.B||''}</td></tr>`;
+                h += `<td class="border p-1 text-center bg-yellow-50">${c.S||''}</td><td class="border p-1 text-center bg-blue-50">${c.I||''}</td><td class="border p-1 text-center bg-red-50">${c.A||''}</td><td class="border p-1 text-center bg-purple-100">${c.B||''}</td></tr>`;
             });
-            tbody.innerHTML = html;
+            document.getElementById('absensi-body').innerHTML = h;
         }
 
         function renderNilaiTable(cls) {
-            const tbody = document.getElementById('nilai-body');
-            let html = '';
-            cls.students.forEach((s, i) => {
+            let h = '';
+            cls.students.forEach((s,i) => {
                 const n = s.nilai;
-                const res = window.calculateNA(n);
-                html += `<tr class="hover:bg-gray-50"><td class="border border-black p-1 text-center">${i+1}</td><td class="border border-black p-1 px-2 whitespace-nowrap">${s.name}</td>
-                <td class="border border-black p-0"><input type="number" value="${n.lm1||''}" oninput="window.updateNilai(${i}, 'lm1', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-0"><input type="number" value="${n.lm2||''}" oninput="window.updateNilai(${i}, 'lm2', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-0"><input type="number" value="${n.lm3||''}" oninput="window.updateNilai(${i}, 'lm3', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-0"><input type="number" value="${n.lm4||''}" oninput="window.updateNilai(${i}, 'lm4', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-1 text-center bg-gray-100 text-xs font-bold">${res.avgLM > 0 ? res.avgLM.toFixed(0) : ''}</td>
-                <td class="border border-black p-0"><input type="number" value="${n.sts||''}" oninput="window.updateNilai(${i}, 'sts', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-0"><input type="number" value="${n.sas||''}" oninput="window.updateNilai(${i}, 'sas', this.value)" class="w-full text-center p-1 outline-none text-xs"></td>
-                <td class="border border-black p-1 text-center bg-blue-100 font-bold text-blue-900">${res.NA > 0 ? res.NA : ''}</td>
-                <td class="border border-black p-1 px-2 text-center text-xs italic font-bold ${res.NA < 75 && res.NA > 0 ? 'text-red-600' : 'text-green-700'}">${res.predikat}</td></tr>`;
+                const {NA, predikat} = calculateNA(n);
+                h += `<tr><td class="border p-1 text-center bg-slate-50 sticky left-0 z-10">${i+1}</td><td class="border p-1 px-2 whitespace-nowrap sticky left-8 bg-slate-50 z-10">${s.name}</td>
+                <td class="border p-0"><input type="number" value="${n.lm1||''}" oninput="window.updateNilai(${i},'lm1',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-0"><input type="number" value="${n.lm2||''}" oninput="window.updateNilai(${i},'lm2',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-0"><input type="number" value="${n.lm3||''}" oninput="window.updateNilai(${i},'lm3',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-0"><input type="number" value="${n.lm4||''}" oninput="window.updateNilai(${i},'lm4',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-1 text-center bg-gray-50 font-bold">${calculateNA(n).avgLM||''}</td>
+                <td class="border p-0"><input type="number" value="${n.sts||''}" oninput="window.updateNilai(${i},'sts',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-0"><input type="number" value="${n.sas||''}" oninput="window.updateNilai(${i},'sas',this.value)" class="w-full text-center p-1 outline-none"></td>
+                <td class="border p-1 text-center bg-blue-50 font-bold text-blue-900">${NA||''}</td>
+                <td class="border p-1 text-center text-[10px] ${NA<75?'text-red-500':'text-green-600'}">${predikat}</td></tr>`;
             });
-            tbody.innerHTML = html;
+            document.getElementById('nilai-body').innerHTML = h;
         }
 
-        window.calculateNA = (n) => {
-            let lmSum = (parseFloat(n.lm1)||0) + (parseFloat(n.lm2)||0) + (parseFloat(n.lm3)||0) + (parseFloat(n.lm4)||0);
-            let lmCount = 0; if(n.lm1 > 0) lmCount++; if(n.lm2 > 0) lmCount++; if(n.lm3 > 0) lmCount++; if(n.lm4 > 0) lmCount++;
-            let avgLM = lmCount > 0 ? (lmSum / lmCount) : 0;
-            let components = 1; let totalScore = avgLM;
-            if(n.sts > 0) { totalScore += parseFloat(n.sts); components++; }
-            if(n.sas > 0) { totalScore += parseFloat(n.sas); components++; }
-            let NA = avgLM > 0 ? (totalScore / components).toFixed(0) : 0;
-            let predikat = NA >= 90 ? "A" : NA >= 80 ? "B" : NA >= 75 ? "C" : "D";
-            if(NA == 0) predikat = "-";
-            return { avgLM, NA, predikat };
+        window.renderClassSelector = () => {
+            const sel = document.getElementById('class-selector');
+            sel.innerHTML = '';
+            window.appState.classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id; opt.text = c.name;
+                if(c.id === window.appState.activeClassId) opt.selected = true;
+                sel.appendChild(opt);
+            });
         }
 
-        function showLoading(show) { document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none'; }
-        function showStatus(msg, colorClass) {
-            const statusEl = document.getElementById('save-status');
-            statusEl.innerHTML = `<span class="status-indicator ${colorClass}"></span> ${msg}`;
-            statusEl.className = "text-xs flex items-center gap-1 hidden md:flex " + colorClass;
+        function calculateNA(n) {
+            let s=0, c=0;
+            [n.lm1,n.lm2,n.lm3,n.lm4].forEach(v => {if(v>0){s+=parseFloat(v);c++}});
+            let avg = c>0 ? s/c : 0;
+            let finalS = avg, finalC = 1;
+            if(n.sts>0) {finalS+=parseFloat(n.sts); finalC++}
+            if(n.sas>0) {finalS+=parseFloat(n.sas); finalC++}
+            let NA = avg>0 ? (finalS/finalC).toFixed(0) : 0;
+            return { avgLM: avg.toFixed(0), NA: NA, predikat: NA==0?'-':NA>=90?'A':NA>=80?'B':NA>=75?'C':'D' };
         }
 
-        window.switchTab = (tabId) => {
-            document.getElementById('tab-data').classList.add('hidden'); document.getElementById('tab-absensi').classList.add('hidden'); document.getElementById('tab-nilai').classList.add('hidden');
-            document.querySelectorAll('button[id^="btn-"]').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive', 'text-gray-300'); });
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            const activeBtn = document.getElementById('btn-' + tabId); activeBtn.classList.remove('tab-inactive', 'text-gray-300'); activeBtn.classList.add('tab-active');
+        function updatePrintHeaders(cls) {
+            document.getElementById('disp-school').innerText = cls.info.school;
+            document.getElementById('disp-mapel').innerText = cls.info.mapel;
+            document.getElementById('disp-kelas').innerText = cls.name;
+            document.getElementById('disp-guru').innerText = cls.info.guru;
+            document.getElementById('disp-semester').innerText = cls.info.semester;
         }
 
-        window.onload = () => {
-             const date = new Date();
-             const options = { year: 'numeric', month: 'long', day: 'numeric' };
-             const dateEl = document.getElementById('date-now');
-             if(dateEl) dateEl.innerText = date.toLocaleDateString('id-ID', options);
+        function updateOnlineStatus(online) {
+            const el = document.getElementById('save-status');
+            el.innerHTML = online ? '<span class="status-dot bg-green-500"></span>Online' : '<span class="status-dot bg-yellow-400"></span>Saving...';
         }
+
+        function showLoading(show) { document.getElementById('loading-overlay').style.display = show?'flex':'none'; }
+
+        window.switchTab = (id) => {
+            ['data','absensi','nilai'].forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active', 'text-yellow-400'));
+            document.getElementById('tab-'+id).classList.remove('hidden');
+            document.getElementById('nav-'+id).classList.add('active');
+        }
+
+        window.onload = initApp;
     </script>
 </body>
 </html>
