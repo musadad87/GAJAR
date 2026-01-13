@@ -1,39 +1,133 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ExternalLink, CheckCircle2, Circle, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, CheckCircle2, Circle, ClipboardList, Loader2 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+
+// Inisialisasi Firebase dari environment
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'task-manager-default';
 
 const App = () => {
   const [tasks, setTasks] = useState([]);
   const [taskInput, setTaskInput] = useState('');
   const [description, setDescription] = useState('');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const googleDriveLink = "https://drive.google.com/drive/folders/1XRQbDwEvV_vX0kIc9yKJ0uZTe-HJsiZd";
 
-  const addTask = (e) => {
-    e.preventDefault();
-    if (!taskInput.trim()) return;
-
-    const newTask = {
-      id: Date.now(),
-      title: taskInput,
-      description: description,
-      completed: false,
-      createdAt: new Date().toLocaleString('id-ID')
+  // Efek 1: Autentikasi
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
     };
 
-    setTasks([newTask, ...tasks]);
-    setTaskInput('');
-    setDescription('');
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Efek 2: Sinkronisasi Firestore (Real-time)
+  useEffect(() => {
+    if (!user) return;
+
+    // Menggunakan path sesuai Rule 1: /artifacts/{appId}/users/{userId}/{collectionName}
+    const tasksCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'tasks');
+    
+    // Rule 2: Query sederhana tanpa orderBy yang butuh index kompleks
+    const q = query(tasksCollection);
+
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        // Urutkan di memori (Client-side)
+        const sortedTasks = tasksData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setTasks(sortedTasks);
+      },
+      (error) => {
+        console.error("Firestore error:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const addTask = async (e) => {
+    e.preventDefault();
+    if (!taskInput.trim() || !user) return;
+
+    try {
+      const tasksCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'tasks');
+      await addDoc(tasksCollection, {
+        title: taskInput,
+        description: description,
+        completed: false,
+        createdAt: serverTimestamp()
+      });
+      setTaskInput('');
+      setDescription('');
+    } catch (error) {
+      console.error("Gagal menambah tugas:", error);
+    }
   };
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  const toggleTask = async (id, currentStatus) => {
+    if (!user) return;
+    try {
+      const taskDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'tasks', id);
+      await updateDoc(taskDoc, { completed: !currentStatus });
+    } catch (error) {
+      console.error("Gagal update tugas:", error);
+    }
   };
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const deleteTask = async (id) => {
+    if (!user) return;
+    try {
+      const taskDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'tasks', id);
+      await deleteDoc(taskDoc);
+    } catch (error) {
+      console.error("Gagal menghapus tugas:", error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <p className="text-slate-600 font-medium">Menghubungkan ke sistem...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
@@ -46,7 +140,7 @@ const App = () => {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Manajer Tugas Saya</h1>
-          <p className="text-slate-500 mt-2">Kelola daftar tugas dan simpan dokumen di Google Drive</p>
+          <p className="text-slate-500 mt-2">ID Pengguna: <span className="font-mono text-xs">{user?.uid}</span></p>
           
           <div className="mt-6">
             <a 
@@ -89,7 +183,7 @@ const App = () => {
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <Plus size={20} />
-              Tambah ke Daftar Lokal
+              Simpan Tugas Secara Permanen
             </button>
           </form>
         </section>
@@ -97,13 +191,13 @@ const App = () => {
         {/* Task List */}
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-slate-700 px-2 flex items-center gap-2">
-            Daftar Tugas 
+            Daftar Tugas Tersimpan
             <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full">{tasks.length}</span>
           </h2>
           
           {tasks.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400">
-              <p>Belum ada tugas di daftar lokal.</p>
+              <p>Belum ada tugas tersimpan di cloud.</p>
             </div>
           ) : (
             tasks.map(task => (
@@ -112,7 +206,7 @@ const App = () => {
                 className={`group bg-white p-4 rounded-2xl border transition-all flex items-start gap-4 ${task.completed ? 'border-slate-100 bg-slate-50/50' : 'border-slate-200 shadow-sm'}`}
               >
                 <button 
-                  onClick={() => toggleTask(task.id)}
+                  onClick={() => toggleTask(task.id, task.completed)}
                   className={`mt-1 transition-colors ${task.completed ? 'text-green-500' : 'text-slate-300 hover:text-blue-500'}`}
                 >
                   {task.completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
@@ -127,9 +221,11 @@ const App = () => {
                       {task.description}
                     </p>
                   )}
-                  <span className="text-[10px] text-slate-400 mt-2 block uppercase tracking-wider font-medium">
-                    Dibuat: {task.createdAt}
-                  </span>
+                  {task.createdAt && (
+                    <span className="text-[10px] text-slate-400 mt-2 block uppercase tracking-wider font-medium">
+                      Tersinkronisasi Cloud
+                    </span>
+                  )}
                 </div>
 
                 <button 
@@ -144,7 +240,7 @@ const App = () => {
         </section>
 
         <footer className="mt-12 pb-8 text-center text-slate-400 text-sm">
-          <p>© 2024 Aplikasi Tugas Mandiri</p>
+          <p>© 2024 Aplikasi Tugas Mandiri Cloud</p>
         </footer>
       </div>
     </div>
