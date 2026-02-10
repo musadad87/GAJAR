@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Surat SMK Mutakhir - Foto Asli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background: white; margin: 0; padding: 0; }
+            .print-container { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important;
+            }
+            @page { size: A4; margin: 1cm; }
+        }
+        .page-font { font-family: 'Times New Roman', Times, serif; }
+        .img-container img { width: 100%; height: auto; display: block; }
+        .signature-overlay {
+            position: relative;
+        }
+        .signature-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-bottom: 5px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen py-8 px-4">
+
+    <!-- Kontrol Panel -->
+    <div class="no-print max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md mb-6 border-b-4 border-blue-600">
+        <h2 class="text-xl font-bold mb-4 text-blue-800">Edit Data Surat & Siswa</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Nama Siswa</label>
+                <input type="text" id="inputNama" value="NAILA NASIRA" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">NISN</label>
+                <input type="text" id="inputNisn" value="0064030567" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Tempat, Tgl Lahir</label>
+                <input type="text" id="inputTtl" value="Serang, 07 Oktober 2006" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Program Keahlian</label>
+                <input type="text" id="inputKeahlian" value="Bisnis Manajemen" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Nomor Surat</label>
+                <input type="text" id="inputNo" placeholder="421.3/001/SMK-MT/II/2026" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Tanggal Surat</label>
+                <input type="text" id="inputTglSurat" value="10 Februari 2026" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase">Nama Kepala Sekolah</label>
+                <input type="text" id="inputKepsek" value="Drs. H. M. RAPIUDIN, S.E" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" oninput="updateSurat()">
+            </div>
+        </div>
+        <div class="mt-6 flex items-center gap-4">
+            <button onclick="window.print()" class="bg-blue-700 text-white px-10 py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition-all flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+                </svg>
+                CETAK / SIMPAN KE PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Dokumen Utama -->
+    <div class="print-container max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-xl page-font text-black">
+        
+        <!-- KOP SURAT ASLI -->
+        <div class="img-container w-full">
+            <img src="https://musadad87.github.io/GAJAR/KOP%20SURAT.jpg" alt="KOP SURAT ASLI">
+        </div>
+
+        <div class="px-[1.5cm] py-4">
+            <!-- Judul & Nomor -->
+            <div class="text-center mb-8">
+                <h4 class="text-[14pt] font-bold underline uppercase">SURAT KETERANGAN AKTIF SEKOLAH</h4>
+                <p class="text-[12pt]">Nomor: <span id="displayNo">........ / ........ / SMK-MT / ........ / 2026</span></p>
+            </div>
+
+            <!-- Isi Surat -->
+            <div class="text-[12pt] leading-relaxed">
+                <p class="mb-6">Yang bertanda tangan di bawah ini, Kepala Sekolah Menengah Kejuruan (SMK) Mutakhir – Petir, Kabupaten Serang, Provinsi Banten, dengan ini menerangkan bahwa:</p>
+
+                <table class="w-[90%] mx-auto mb-8 border-none">
+                    <tr>
+                        <td class="w-[35%] py-1">Nama Lengkap</td>
+                        <td class="w-[5%]">:</td>
+                        <td class="font-bold"><span id="displayNama">NAILA NASIRA</span></td>
+                    </tr>
+                    <tr>
+                        <td class="py-1">NISN</td>
+                        <td>:</td>
+                        <td><span id="displayNisn">0064030567</span></td>
+                    </tr>
+                    <tr>
+                        <td class="py-1">Tempat, Tanggal Lahir</td>
+                        <td>:</td>
+                        <td><span id="displayTtl">Serang, 07 Oktober 2006</span></td>
+                    </tr>
+                    <tr>
+                        <td class="py-1">Program Keahlian</td>
+                        <td>:</td>
+                        <td><span id="displayKeahlian">Bisnis Manajemen</span></td>
+                    </tr>
+                    <tr>
+                        <td class="py-1">Status Siswa</td>
+                        <td>:</td>
+                        <td class="font-bold">Aktif Belajar</td>
+                    </tr>
+                </table>
+
+                <p class="mb-6 text-justify">
+                    Menyatakan bahwa nama yang tersebut di atas adalah benar siswa yang terdaftar dan <b>masih aktif</b> mengikuti kegiatan belajar mengajar pada Tahun Ajaran 2025/2026 di SMK Mutakhir.
+                </p>
+
+                <p class="mb-8 text-justify">
+                    Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dapat dipergunakan sebagaimana mestinya sesuai dengan kepentingan yang bersangkutan.
+                </p>
+            </div>
+
+            <!-- TANDA TANGAN ASLI DARI GITHUB -->
+            <div class="flex justify-end mt-10">
+                <div class="w-[380px] signature-overlay text-[12pt]">
+                    <img src="https://raw.githubusercontent.com/musadad87/GAJAR/main/nama%20kepsek.png" alt="TANDA TANGAN KEPSEK ASLI" class="opacity-100">
+                    
+                    <div class="signature-text pl-24">
+                        <div class="mt-2">
+                            <p>Kab. Serang, <span id="displayTglSurat">10 Februari 2026</span></p>
+                        </div>
+                        <div class="mb-2">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function updateSurat() {
+            document.getElementById('displayNama').innerText = document.getElementById('inputNama').value.toUpperCase();
+            document.getElementById('displayNisn').innerText = document.getElementById('inputNisn').value;
+            document.getElementById('displayTtl').innerText = document.getElementById('inputTtl').value;
+            document.getElementById('displayKeahlian').innerText = document.getElementById('inputKeahlian').value;
+            
+            const noSurat = document.getElementById('inputNo').value;
+            document.getElementById('displayNo').innerText = noSurat ? noSurat : "........ / ........ / SMK-MT / ........ / 2026";
+            
+            document.getElementById('displayTglSurat').innerText = document.getElementById('inputTglSurat').value;
+            document.getElementById('displayKepsek').innerText = document.getElementById('inputKepsek').value;
+        }
+    </script>
+</body>
+</html>
