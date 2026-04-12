@@ -1,0 +1,524 @@
+import React, { useState, useRef, useEffect } from 'react';
+
+// Konstanta
+const TOTAL_SOAL = 40;
+const PILIHAN = ['a', 'b', 'c', 'd', 'e'];
+
+// --- Helper Functions ---
+const generateEmptyKey = () => Array(TOTAL_SOAL).fill('-');
+
+// SVGs untuk Icons
+const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const IconKey = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>;
+const IconCamera = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
+const IconDatabase = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
+const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+
+export default function App() {
+  // State Management
+  const [activeTab, setActiveTab] = useState('kunci'); // 'kunci', 'scan', 'database'
+  
+  // Data State
+  const [kunciJawaban, setKunciJawaban] = useState(generateEmptyKey());
+  const [database, setDatabase] = useState([]);
+  
+  // Scan State
+  const [namaSiswa, setNamaSiswa] = useState('');
+  const [nis, setNis] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanResult, setScanResult] = useState(null); // Menyimpan hasil pembacaan AI sementara
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // --- API Gemini Call ---
+  const apiKey = ""; // API Key disediakan oleh environment
+
+  const callGeminiVision = async (base64Image) => {
+    try {
+      const prompt = `Ini adalah gambar lembar jawaban pilihan ganda siswa. 
+      Tolong perhatikan kotak-kotak jawaban dari nomor 1 sampai 40.
+      Tugas Anda adalah membaca pilihan mana (a, b, c, d, atau e) yang diberi tanda silang (X) atau dihitamkan.
+      Jika siswa meralat jawaban (mencoret dua garis lalu menyilang yang baru), ambil jawaban yang baru.
+      Jika tidak diisi atau tidak terbaca jelas, anggap '-'.
+      
+      KEMBALIKAN HANYA ARRAY JSON berisi 40 string tanpa teks tambahan, markdown, atau penjelasan.
+      Contoh format wajib: ["a", "c", "-", "e", "b", ...dan seterusnya sampai 40 item]`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: prompt },
+                  { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message || "Gagal memanggil API");
+
+      let textOutput = result.candidates[0].content.parts[0].text;
+      
+      // Bersihkan teks dari markdown jika ada
+      textOutput = textOutput.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      const parsedArray = JSON.parse(textOutput);
+      
+      if (!Array.isArray(parsedArray) || parsedArray.length !== TOTAL_SOAL) {
+          throw new Error("Format hasil tidak sesuai atau jumlah soal tidak 40.");
+      }
+
+      return parsedArray.map(ans => String(ans).toLowerCase());
+      
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      throw error;
+    }
+  };
+
+  // --- Handlers ---
+  const handleUpdateKunci = (index, value) => {
+    const newKunci = [...kunciJawaban];
+    newKunci[index] = value;
+    setKunciJawaban(newKunci);
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setScanResult(null); // Reset hasil jika ganti gambar
+        setErrorMsg('');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const calculateScore = (jawabanSiswa) => {
+    let benar = 0;
+    let salah = 0;
+    let kosong = 0;
+
+    jawabanSiswa.forEach((jawaban, index) => {
+      if (jawaban === '-' || !jawaban) {
+        kosong++;
+      } else if (jawaban === kunciJawaban[index]) {
+        benar++;
+      } else {
+        salah++;
+      }
+    });
+
+    // Perhitungan nilai skala 100
+    const nilai = (benar / TOTAL_SOAL) * 100;
+
+    return { benar, salah, kosong, nilai: nilai.toFixed(2) };
+  };
+
+  const processImage = async () => {
+    if (!imagePreview) {
+      setErrorMsg("Mohon masukkan gambar LJK terlebih dahulu.");
+      return;
+    }
+
+    // Pengecekan apakah kunci jawaban sudah diisi minimal 1
+    const isKunciKosong = kunciJawaban.every(k => k === '-');
+    if (isKunciKosong) {
+        if(!window.confirm("Kunci jawaban masih kosong semua. Yakin ingin melanjutkan proses?")) return;
+    }
+
+    setIsProcessing(true);
+    setErrorMsg('');
+
+    try {
+      // Ambil string base64 tanpa prefix "data:image/jpeg;base64,"
+      const base64Data = imagePreview.split(',')[1];
+      
+      // Panggil AI untuk membaca gambar
+      const detectedAnswers = await callGeminiVision(base64Data);
+      
+      // Kalkulasi nilai
+      const statistik = calculateScore(detectedAnswers);
+      
+      setScanResult({
+        jawaban: detectedAnswers,
+        ...statistik
+      });
+
+    } catch (error) {
+      setErrorMsg("Terjadi kesalahan saat membaca gambar. Pastikan gambar jelas dan coba lagi. (" + error.message + ")");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const saveToDatabase = () => {
+    if (!namaSiswa) {
+      setErrorMsg("Mohon isi Nama Siswa terlebih dahulu.");
+      return;
+    }
+    if (!scanResult) return;
+
+    const newData = {
+      id: Date.now(),
+      waktu: new Date().toLocaleString('id-ID'),
+      nama: namaSiswa,
+      nis: nis || '-',
+      benar: scanResult.benar,
+      salah: scanResult.salah,
+      kosong: scanResult.kosong,
+      nilai: scanResult.nilai,
+      detailJawaban: scanResult.jawaban
+    };
+
+    setDatabase([...database, newData]);
+    
+    // Reset form untuk siswa berikutnya
+    setNamaSiswa('');
+    setNis('');
+    setImageFile(null);
+    setImagePreview('');
+    setScanResult(null);
+    setActiveTab('database');
+  };
+
+  const exportToCSV = () => {
+    if (database.length === 0) {
+      alert("Database masih kosong.");
+      return;
+    }
+
+    // Buat header CSV
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Waktu,NIS,Nama Siswa,Benar,Salah,Kosong,Nilai Akhir\n";
+
+    // Tambahkan data baris per baris
+    database.forEach(row => {
+      // Escape koma pada nama
+      const nama = `"${row.nama}"`;
+      const rowData = `${row.waktu},${row.nis},${nama},${row.benar},${row.salah},${row.kosong},${row.nilai}`;
+      csvContent += rowData + "\n";
+    });
+
+    // Proses Download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Hasil_Koreksi_LJK.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- Render Views ---
+  const renderTabKunci = () => (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Input Kunci Jawaban</h2>
+          <p className="text-sm text-slate-500">Tentukan jawaban benar untuk 40 soal pilihan ganda.</p>
+        </div>
+        <button 
+          onClick={() => setKunciJawaban(generateEmptyKey())}
+          className="text-sm text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition-colors"
+        >
+          Reset Kunci
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {kunciJawaban.map((jawaban, idx) => (
+          <div key={idx} className="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+            <span className="w-6 text-right font-semibold text-slate-600">{idx + 1}.</span>
+            <select
+              value={jawaban}
+              onChange={(e) => handleUpdateKunci(idx, e.target.value)}
+              className="flex-1 bg-white border border-slate-300 rounded-md py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="-">- Kosong -</option>
+              {PILIHAN.map(p => (
+                <option key={p} value={p}>{p.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderTabScan = () => (
+    <div className="space-y-6">
+      {/* Kartu Input Data Siswa */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800 mb-4">Data Siswa & Scan LJK</h2>
+        
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap Siswa *</label>
+            <input 
+              type="text" 
+              value={namaSiswa}
+              onChange={(e) => setNamaSiswa(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Contoh: Budi Santoso"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Peserta / NIS</label>
+            <input 
+              type="text" 
+              value={nis}
+              onChange={(e) => setNis(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Opsional"
+            />
+          </div>
+        </div>
+
+        {/* Upload/Kamera Section */}
+        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 relative">
+          {!imagePreview ? (
+            <div className="flex flex-col items-center justify-center space-y-3">
+              <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+                <IconCamera />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-700">Ambil Foto atau Unggah LJK</p>
+                <p className="text-xs text-slate-500 mt-1">Pastikan foto terang dan fokus pada kotak jawaban.</p>
+              </div>
+              {/* Input file yang bisa membuka kamera di HP */}
+              <input 
+                type="file" 
+                accept="image/*" 
+                capture="environment"
+                onChange={handleImageUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <button className="mt-4 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Pilih File / Buka Kamera
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <img src={imagePreview} alt="Preview LJK" className="max-h-[400px] mx-auto rounded-lg shadow-sm" />
+              <button 
+                onClick={() => { setImagePreview(''); setImageFile(null); setScanResult(null); }}
+                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600"
+                title="Hapus Gambar"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Error Message */}
+        {errorMsg && (
+          <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center">
+            <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Action Button */}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={processImage}
+            disabled={!imagePreview || isProcessing}
+            className={`flex items-center px-6 py-2.5 rounded-lg font-semibold text-white transition-all
+              ${!imagePreview ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md'}
+            `}
+          >
+            {isProcessing ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                AI Sedang Membaca LJK...
+              </>
+            ) : 'Proses Gambar LJK'}
+          </button>
+        </div>
+      </div>
+
+      {/* Hasil Panel */}
+      {scanResult && (
+        <div className="bg-emerald-50 p-6 rounded-xl shadow-sm border border-emerald-200">
+          <h3 className="text-lg font-bold text-emerald-800 mb-4 border-b border-emerald-200 pb-2">Hasil Koreksi Sementara</h3>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
+              <p className="text-sm text-slate-500 font-medium">Nilai Akhir</p>
+              <p className="text-3xl font-bold text-blue-600">{scanResult.nilai}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
+              <p className="text-sm text-slate-500 font-medium">Benar</p>
+              <p className="text-2xl font-bold text-emerald-600">{scanResult.benar}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
+              <p className="text-sm text-slate-500 font-medium">Salah</p>
+              <p className="text-2xl font-bold text-red-500">{scanResult.salah}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
+              <p className="text-sm text-slate-500 font-medium">Kosong</p>
+              <p className="text-2xl font-bold text-slate-600">{scanResult.kosong}</p>
+            </div>
+          </div>
+
+          {/* Quick Review Jawaban Terdeteksi */}
+          <div className="mb-6">
+             <p className="text-sm font-medium text-emerald-800 mb-2">Jawaban terbaca oleh sistem (bisa diedit jika AI salah baca):</p>
+             <div className="flex flex-wrap gap-2">
+                {scanResult.jawaban.map((jaw, idx) => (
+                    <div key={idx} className={`flex items-center text-xs px-2 py-1 rounded border 
+                      ${jaw === kunciJawaban[idx] ? 'bg-emerald-100 border-emerald-300 text-emerald-800' 
+                        : jaw === '-' ? 'bg-slate-100 border-slate-300 text-slate-500' 
+                        : 'bg-red-100 border-red-300 text-red-800'}`}>
+                        <span className="font-bold w-4">{idx+1}.</span> 
+                        <span className="ml-1 uppercase font-semibold">{jaw}</span>
+                    </div>
+                ))}
+             </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+             <button 
+                onClick={() => setScanResult(null)}
+                className="px-4 py-2 bg-white border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-100"
+              >
+                Batal / Ulangi
+             </button>
+             <button 
+                onClick={saveToDatabase}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md font-medium"
+              >
+                Simpan ke Database
+             </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTabDatabase = () => (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Database Hasil Koreksi</h2>
+          <p className="text-sm text-slate-500">Total data tersimpan: {database.length} Siswa</p>
+        </div>
+        <button 
+          onClick={exportToCSV}
+          disabled={database.length === 0}
+          className={`flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors
+            ${database.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}
+          `}
+        >
+          <IconDownload />
+          <span className="ml-2">Download Excel (CSV)</span>
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
+              <th className="p-4 font-semibold">No</th>
+              <th className="p-4 font-semibold">Waktu</th>
+              <th className="p-4 font-semibold">NIS</th>
+              <th className="p-4 font-semibold">Nama Siswa</th>
+              <th className="p-4 font-semibold text-center">B/S/K</th>
+              <th className="p-4 font-semibold text-right">Nilai Akhir</th>
+            </tr>
+          </thead>
+          <tbody>
+            {database.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="p-8 text-center text-slate-500">
+                  Belum ada data. Silakan scan LJK terlebih dahulu.
+                </td>
+              </tr>
+            ) : (
+              database.map((row, index) => (
+                <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="p-4 text-slate-500">{index + 1}</td>
+                  <td className="p-4 text-sm text-slate-600">{row.waktu}</td>
+                  <td className="p-4 text-slate-800">{row.nis}</td>
+                  <td className="p-4 font-medium text-slate-800">{row.nama}</td>
+                  <td className="p-4 text-center text-sm">
+                    <span className="text-emerald-600 font-medium">{row.benar}</span> / 
+                    <span className="text-red-500 font-medium ml-1">{row.salah}</span> / 
+                    <span className="text-slate-400 font-medium ml-1">{row.kosong}</span>
+                  </td>
+                  <td className="p-4 text-right font-bold text-blue-600">{row.nilai}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-100 font-sans pb-12">
+      {/* Header */}
+      <header className="bg-blue-600 text-white shadow-md">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-extrabold tracking-tight">AutoKoreksi LJK</h1>
+          <p className="text-blue-100 mt-1">Sistem Penilaian Ujian Otomatis Berbasis AI</p>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 mt-8">
+        
+        {/* Navigation Tabs */}
+        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-8">
+          <button 
+            onClick={() => setActiveTab('kunci')}
+            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
+              ${activeTab === 'kunci' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
+            `}
+          >
+            <IconKey /> <span className="ml-2 hidden sm:inline">1. Input Kunci</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('scan')}
+            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
+              ${activeTab === 'scan' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
+            `}
+          >
+            <IconCamera /> <span className="ml-2 hidden sm:inline">2. Scan LJK Siswa</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('database')}
+            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
+              ${activeTab === 'database' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
+            `}
+          >
+            <IconDatabase /> <span className="ml-2 hidden sm:inline">3. Database Hasil</span>
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div className="transition-all duration-300">
+          {activeTab === 'kunci' && renderTabKunci()}
+          {activeTab === 'scan' && renderTabScan()}
+          {activeTab === 'database' && renderTabDatabase()}
+        </div>
+
+      </main>
+    </div>
+  );
+}
