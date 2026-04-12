@@ -1,524 +1,660 @@
-import React, { useState, useRef, useEffect } from 'react';
-
-// Konstanta
-const TOTAL_SOAL = 40;
-const PILIHAN = ['a', 'b', 'c', 'd', 'e'];
-
-// --- Helper Functions ---
-const generateEmptyKey = () => Array(TOTAL_SOAL).fill('-');
-
-// SVGs untuk Icons
-const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-const IconKey = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>;
-const IconCamera = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
-const IconDatabase = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
-const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
-
-export default function App() {
-  // State Management
-  const [activeTab, setActiveTab] = useState('kunci'); // 'kunci', 'scan', 'database'
-  
-  // Data State
-  const [kunciJawaban, setKunciJawaban] = useState(generateEmptyKey());
-  const [database, setDatabase] = useState([]);
-  
-  // Scan State
-  const [namaSiswa, setNamaSiswa] = useState('');
-  const [nis, setNis] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [scanResult, setScanResult] = useState(null); // Menyimpan hasil pembacaan AI sementara
-  const [errorMsg, setErrorMsg] = useState('');
-
-  // --- API Gemini Call ---
-  const apiKey = ""; // API Key disediakan oleh environment
-
-  const callGeminiVision = async (base64Image) => {
-    try {
-      const prompt = `Ini adalah gambar lembar jawaban pilihan ganda siswa. 
-      Tolong perhatikan kotak-kotak jawaban dari nomor 1 sampai 40.
-      Tugas Anda adalah membaca pilihan mana (a, b, c, d, atau e) yang diberi tanda silang (X) atau dihitamkan.
-      Jika siswa meralat jawaban (mencoret dua garis lalu menyilang yang baru), ambil jawaban yang baru.
-      Jika tidak diisi atau tidak terbaca jelas, anggap '-'.
-      
-      KEMBALIKAN HANYA ARRAY JSON berisi 40 string tanpa teks tambahan, markdown, atau penjelasan.
-      Contoh format wajib: ["a", "c", "-", "e", "b", ...dan seterusnya sampai 40 item]`;
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { text: prompt },
-                  { inlineData: { mimeType: "image/jpeg", data: base64Image } }
-                ]
-              }
-            ]
-          })
-        }
-      );
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message || "Gagal memanggil API");
-
-      let textOutput = result.candidates[0].content.parts[0].text;
-      
-      // Bersihkan teks dari markdown jika ada
-      textOutput = textOutput.replace(/```json/g, '').replace(/```/g, '').trim();
-      
-      const parsedArray = JSON.parse(textOutput);
-      
-      if (!Array.isArray(parsedArray) || parsedArray.length !== TOTAL_SOAL) {
-          throw new Error("Format hasil tidak sesuai atau jumlah soal tidak 40.");
-      }
-
-      return parsedArray.map(ans => String(ans).toLowerCase());
-      
-    } catch (error) {
-      console.error("Gemini API Error:", error);
-      throw error;
-    }
-  };
-
-  // --- Handlers ---
-  const handleUpdateKunci = (index, value) => {
-    const newKunci = [...kunciJawaban];
-    newKunci[index] = value;
-    setKunciJawaban(newKunci);
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setScanResult(null); // Reset hasil jika ganti gambar
-        setErrorMsg('');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const calculateScore = (jawabanSiswa) => {
-    let benar = 0;
-    let salah = 0;
-    let kosong = 0;
-
-    jawabanSiswa.forEach((jawaban, index) => {
-      if (jawaban === '-' || !jawaban) {
-        kosong++;
-      } else if (jawaban === kunciJawaban[index]) {
-        benar++;
-      } else {
-        salah++;
-      }
-    });
-
-    // Perhitungan nilai skala 100
-    const nilai = (benar / TOTAL_SOAL) * 100;
-
-    return { benar, salah, kosong, nilai: nilai.toFixed(2) };
-  };
-
-  const processImage = async () => {
-    if (!imagePreview) {
-      setErrorMsg("Mohon masukkan gambar LJK terlebih dahulu.");
-      return;
-    }
-
-    // Pengecekan apakah kunci jawaban sudah diisi minimal 1
-    const isKunciKosong = kunciJawaban.every(k => k === '-');
-    if (isKunciKosong) {
-        if(!window.confirm("Kunci jawaban masih kosong semua. Yakin ingin melanjutkan proses?")) return;
-    }
-
-    setIsProcessing(true);
-    setErrorMsg('');
-
-    try {
-      // Ambil string base64 tanpa prefix "data:image/jpeg;base64,"
-      const base64Data = imagePreview.split(',')[1];
-      
-      // Panggil AI untuk membaca gambar
-      const detectedAnswers = await callGeminiVision(base64Data);
-      
-      // Kalkulasi nilai
-      const statistik = calculateScore(detectedAnswers);
-      
-      setScanResult({
-        jawaban: detectedAnswers,
-        ...statistik
-      });
-
-    } catch (error) {
-      setErrorMsg("Terjadi kesalahan saat membaca gambar. Pastikan gambar jelas dan coba lagi. (" + error.message + ")");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const saveToDatabase = () => {
-    if (!namaSiswa) {
-      setErrorMsg("Mohon isi Nama Siswa terlebih dahulu.");
-      return;
-    }
-    if (!scanResult) return;
-
-    const newData = {
-      id: Date.now(),
-      waktu: new Date().toLocaleString('id-ID'),
-      nama: namaSiswa,
-      nis: nis || '-',
-      benar: scanResult.benar,
-      salah: scanResult.salah,
-      kosong: scanResult.kosong,
-      nilai: scanResult.nilai,
-      detailJawaban: scanResult.jawaban
-    };
-
-    setDatabase([...database, newData]);
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Koreksi LJK AI</title>
     
-    // Reset form untuk siswa berikutnya
-    setNamaSiswa('');
-    setNis('');
-    setImageFile(null);
-    setImagePreview('');
-    setScanResult(null);
-    setActiveTab('database');
-  };
+    <!-- Tailwind CSS untuk Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel untuk kompilasi JSX di browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  const exportToCSV = () => {
-    if (database.length === 0) {
-      alert("Database masih kosong.");
-      return;
-    }
+    <style>
+        /* Custom scrollbar class */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
 
-    // Buat header CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Waktu,NIS,Nama Siswa,Benar,Salah,Kosong,Nilai Akhir\n";
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
 
-    // Tambahkan data baris per baris
-    database.forEach(row => {
-      // Escape koma pada nama
-      const nama = `"${row.nama}"`;
-      const rowData = `${row.waktu},${row.nis},${nama},${row.benar},${row.salah},${row.kosong},${row.nilai}`;
-      csvContent += rowData + "\n";
-    });
+        // --- KOMPONEN IKON (Pengganti Lucide-React agar standalone) ---
+        const IconBase = ({ children, className = "w-6 h-6" }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {children}
+            </svg>
+        );
+        const Camera = (p) => <IconBase {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconBase>;
+        const Upload = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const Settings = (p) => <IconBase {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
+        const FileSpreadsheet = (p) => <IconBase {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></IconBase>;
+        const CheckCircle = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
+        const XCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
+        const AlertCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconBase>;
+        const Loader2 = (p) => <IconBase className={`animate-spin ${p.className}`}><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></IconBase>;
+        const ImageIcon = (p) => <IconBase {...p}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></IconBase>;
+        const Database = (p) => <IconBase {...p}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></IconBase>;
 
-    // Proses Download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Hasil_Koreksi_LJK.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+        // --- KONFIGURASI UTAMA ---
+        const TOTAL_QUESTIONS = 40;
+        const OPTIONS = ['a', 'b', 'c', 'd', 'e'];
 
-  // --- Render Views ---
-  const renderTabKunci = () => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Input Kunci Jawaban</h2>
-          <p className="text-sm text-slate-500">Tentukan jawaban benar untuk 40 soal pilihan ganda.</p>
-        </div>
-        <button 
-          onClick={() => setKunciJawaban(generateEmptyKey())}
-          className="text-sm text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition-colors"
-        >
-          Reset Kunci
-        </button>
-      </div>
+        // PERHATIAN: Masukkan API Key Gemini Anda di sini jika ingin dipakai di lokal komputer Anda.
+        const apiKey = ""; 
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {kunciJawaban.map((jawaban, idx) => (
-          <div key={idx} className="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
-            <span className="w-6 text-right font-semibold text-slate-600">{idx + 1}.</span>
-            <select
-              value={jawaban}
-              onChange={(e) => handleUpdateKunci(idx, e.target.value)}
-              className="flex-1 bg-white border border-slate-300 rounded-md py-1 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="-">- Kosong -</option>
-              {PILIHAN.map(p => (
-                <option key={p} value={p}>{p.toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+        const analyzeImageWithGemini = async (base64Image) => {
+            if (!apiKey) {
+                throw new Error("API Key belum disetting. Silakan buka file HTML dan masukkan apiKey Anda.");
+            }
 
-  const renderTabScan = () => (
-    <div className="space-y-6">
-      {/* Kartu Input Data Siswa */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Data Siswa & Scan LJK</h2>
-        
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap Siswa *</label>
-            <input 
-              type="text" 
-              value={namaSiswa}
-              onChange={(e) => setNamaSiswa(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Contoh: Budi Santoso"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Peserta / NIS</label>
-            <input 
-              type="text" 
-              value={nis}
-              onChange={(e) => setNis(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Opsional"
-            />
-          </div>
-        </div>
+            const prompt = `Anda adalah asisten AI ahli pengoreksi ujian. Baca gambar Lembar Jawaban (LJK) ini secara teliti. Terdapat 40 soal pilihan ganda (nomor 1 sampai 40) dengan opsi a, b, c, d, e.
+          Tugas Anda:
+          1. Identifikasi pilihan mana yang diberi tanda silang (X) oleh siswa untuk setiap nomor (1 sampai 40).
+          2. Perhatikan aturan perbaikan (sesuai petunjuk di kertas): Jika ada jawaban awal yang dicoret (misal dengan garis dua horizontal), abaikan itu dan cari tanda silang (X) yang baru di nomor tersebut.
+          3. Kembalikan HANYA format JSON murni yang berisi pasangan nomor soal (sebagai string) dan jawaban (sebagai string huruf kecil 'a', 'b', 'c', 'd', atau 'e'). Jika nomor tersebut tidak dijawab, dibiarkan kosong, atau tidak terbaca, gunakan nilai null.
+          Contoh output wajib (tanpa teks awalan/akhiran apapun, murni JSON):
+          {"1":"a","2":"c","3":null,"4":"e" ... dan seterusnya sampai 40}
+          Jangan tambahkan karakter markdown (\`\`\`json) atau teks apapun selain objek JSON itu sendiri.`;
 
-        {/* Upload/Kamera Section */}
-        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 relative">
-          {!imagePreview ? (
-            <div className="flex flex-col items-center justify-center space-y-3">
-              <div className="bg-blue-100 p-3 rounded-full text-blue-600">
-                <IconCamera />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Ambil Foto atau Unggah LJK</p>
-                <p className="text-xs text-slate-500 mt-1">Pastikan foto terang dan fokus pada kotak jawaban.</p>
-              </div>
-              {/* Input file yang bisa membuka kamera di HP */}
-              <input 
-                type="file" 
-                accept="image/*" 
-                capture="environment"
-                onChange={handleImageUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <button className="mt-4 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">
-                Pilih File / Buka Kamera
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
-              <img src={imagePreview} alt="Preview LJK" className="max-h-[400px] mx-auto rounded-lg shadow-sm" />
-              <button 
-                onClick={() => { setImagePreview(''); setImageFile(null); setScanResult(null); }}
-                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600"
-                title="Hapus Gambar"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-          )}
-        </div>
+            const payload = {
+                contents: [
+                {
+                    role: "user",
+                    parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+                    ]
+                }
+                ]
+            };
 
-        {/* Error Message */}
-        {errorMsg && (
-          <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center">
-            <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            {errorMsg}
-          </div>
-        )}
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const retries = 5;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!textResponse) throw new Error("Respons AI kosong.");
 
-        {/* Action Button */}
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={processImage}
-            disabled={!imagePreview || isProcessing}
-            className={`flex items-center px-6 py-2.5 rounded-lg font-semibold text-white transition-all
-              ${!imagePreview ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md'}
-            `}
-          >
-            {isProcessing ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                AI Sedang Membaca LJK...
-              </>
-            ) : 'Proses Gambar LJK'}
-          </button>
-        </div>
-      </div>
+                let cleanJsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    return JSON.parse(cleanJsonStr);
+                } catch (e) {
+                    console.error("Failed to parse JSON from AI:", cleanJsonStr);
+                    throw new Error("AI tidak mengembalikan format data yang valid.");
+                }
 
-      {/* Hasil Panel */}
-      {scanResult && (
-        <div className="bg-emerald-50 p-6 rounded-xl shadow-sm border border-emerald-200">
-          <h3 className="text-lg font-bold text-emerald-800 mb-4 border-b border-emerald-200 pb-2">Hasil Koreksi Sementara</h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Nilai Akhir</p>
-              <p className="text-3xl font-bold text-blue-600">{scanResult.nilai}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Benar</p>
-              <p className="text-2xl font-bold text-emerald-600">{scanResult.benar}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Salah</p>
-              <p className="text-2xl font-bold text-red-500">{scanResult.salah}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Kosong</p>
-              <p className="text-2xl font-bold text-slate-600">{scanResult.kosong}</p>
-            </div>
-          </div>
+                } catch (error) {
+                if (i === retries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        };
 
-          {/* Quick Review Jawaban Terdeteksi */}
-          <div className="mb-6">
-             <p className="text-sm font-medium text-emerald-800 mb-2">Jawaban terbaca oleh sistem (bisa diedit jika AI salah baca):</p>
-             <div className="flex flex-wrap gap-2">
-                {scanResult.jawaban.map((jaw, idx) => (
-                    <div key={idx} className={`flex items-center text-xs px-2 py-1 rounded border 
-                      ${jaw === kunciJawaban[idx] ? 'bg-emerald-100 border-emerald-300 text-emerald-800' 
-                        : jaw === '-' ? 'bg-slate-100 border-slate-300 text-slate-500' 
-                        : 'bg-red-100 border-red-300 text-red-800'}`}>
-                        <span className="font-bold w-4">{idx+1}.</span> 
-                        <span className="ml-1 uppercase font-semibold">{jaw}</span>
+        const fileToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); 
+                reader.onerror = error => reject(error);
+            });
+        };
+
+        // --- KOMPONEN UTAMA ---
+        function App() {
+            const [activeTab, setActiveTab] = useState('koreksi');
+            
+            const [answerKey, setAnswerKey] = useState(() => {
+                const initial = {};
+                for (let i = 1; i <= TOTAL_QUESTIONS; i++) initial[i] = '';
+                return initial;
+            });
+
+            const [studentName, setStudentName] = useState('');
+            const [imageFile, setImageFile] = useState(null);
+            const [imagePreview, setImagePreview] = useState(null);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [currentResult, setCurrentResult] = useState(null);
+            const [notification, setNotification] = useState(null);
+
+            const [resultsDB, setResultsDB] = useState([]);
+
+            const fileInputRef = useRef(null);
+            const cameraInputRef = useRef(null);
+
+            const showNotification = (message, type = 'info') => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification(null), 5000);
+            };
+
+            const handleAnswerKeyChange = (num, value) => {
+                setAnswerKey(prev => ({ ...prev, [num]: value }));
+            };
+
+            const isAnswerKeyComplete = () => {
+                return Object.values(answerKey).every(val => val !== '');
+            };
+
+            const handleImageUpload = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                if (!file.type.startsWith('image/')) {
+                    showNotification("File harus berupa gambar (JPG/PNG).", "error");
+                    return;
+                }
+                setImageFile(file);
+                
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreview(reader.result);
+                };
+                reader.readAsDataURL(file);
+                setCurrentResult(null); 
+                }
+            };
+
+            const handleProcessImage = async () => {
+                if (!studentName.trim()) {
+                showNotification("Masukkan nama siswa terlebih dahulu.", "error");
+                return;
+                }
+                if (!imageFile) {
+                showNotification("Unggah gambar lembar jawaban terlebih dahulu.", "error");
+                return;
+                }
+                if (!isAnswerKeyComplete()) {
+                showNotification("Kunci jawaban belum lengkap! Silakan lengkapi di menu Setup Kunci.", "error");
+                return;
+                }
+
+                setIsProcessing(true);
+                setCurrentResult(null);
+
+                try {
+                const base64Image = await fileToBase64(imageFile);
+                const studentAnswers = await analyzeImageWithGemini(base64Image);
+
+                let correct = 0;
+                let wrong = 0;
+                let empty = 0;
+                const details = {};
+
+                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                    const studentAns = studentAnswers[i.toString()]?.toLowerCase();
+                    const correctAns = answerKey[i.toString()]?.toLowerCase();
+                    
+                    let status = 'empty';
+                    if (studentAns) {
+                    if (studentAns === correctAns) {
+                        correct++;
+                        status = 'correct';
+                    } else {
+                        wrong++;
+                        status = 'wrong';
+                    }
+                    } else {
+                    empty++;
+                    }
+                    
+                    details[i] = {
+                    studentAnswer: studentAns || '-',
+                    correctAnswer: correctAns,
+                    status: status
+                    };
+                }
+
+                const score = Math.round((correct / TOTAL_QUESTIONS) * 100);
+
+                const result = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString('id-ID'),
+                    name: studentName,
+                    score: score,
+                    correct: correct,
+                    wrong: wrong,
+                    empty: empty,
+                    details: details
+                };
+
+                setCurrentResult(result);
+                setResultsDB(prev => [result, ...prev]);
+                showNotification(`Selesai! Nilai ${studentName}: ${score}`, "success");
+
+                } catch (error) {
+                console.error(error);
+                showNotification(error.message || "Terjadi kesalahan saat memproses gambar.", "error");
+                } finally {
+                setIsProcessing(false);
+                }
+            };
+
+            const resetForm = () => {
+                setStudentName('');
+                setImageFile(null);
+                setImagePreview(null);
+                setCurrentResult(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                if (cameraInputRef.current) cameraInputRef.current.value = '';
+            };
+
+            const exportToCSV = () => {
+                if (resultsDB.length === 0) {
+                showNotification("Belum ada data untuk diexport.", "error");
+                return;
+                }
+
+                const headers = ["Waktu", "Nama Siswa", "Nilai Akhir", "Benar", "Salah", "Kosong"];
+                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                headers.push(`Soal ${i}`);
+                }
+
+                const csvRows = [];
+                csvRows.push(headers.join(','));
+
+                resultsDB.forEach(row => {
+                const rowData = [
+                    `"${row.date}"`,
+                    `"${row.name}"`,
+                    row.score,
+                    row.correct,
+                    row.wrong,
+                    row.empty
+                ];
+                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                    rowData.push(`"${row.details[i].studentAnswer.toUpperCase()}"`);
+                }
+                csvRows.push(rowData.join(','));
+                });
+
+                const csvString = csvRows.join('\n');
+                const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `Hasil_Koreksi_LJK_${new Date().getTime()}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const clearDatabase = () => {
+                const confirmed = window.confirm("Apakah Anda yakin ingin menghapus SEMUA data hasil koreksi?");
+                if (confirmed) setResultsDB([]);
+            };
+
+            return (
+                <div className="min-h-screen text-slate-800 font-sans pb-20">
+                <header className="bg-indigo-600 text-white shadow-md sticky top-0 z-10">
+                    <div className="max-w-5xl mx-auto px-4 py-4">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className="w-6 h-6 text-indigo-200" />
+                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK</h1>
                     </div>
-                ))}
-             </div>
-          </div>
+                    </div>
+                    
+                    <div className="max-w-5xl mx-auto px-4 flex overflow-x-auto no-scrollbar">
+                    <button 
+                        onClick={() => setActiveTab('setup')}
+                        className={`flex items-center gap-2 px-4 py-3 border-b-4 whitespace-nowrap transition-colors ${activeTab === 'setup' ? 'border-indigo-300 font-semibold text-white' : 'border-transparent text-indigo-200 hover:text-white'}`}
+                    >
+                        <Settings className="w-4 h-4" /> Setup Kunci
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('koreksi')}
+                        className={`flex items-center gap-2 px-4 py-3 border-b-4 whitespace-nowrap transition-colors ${activeTab === 'koreksi' ? 'border-indigo-300 font-semibold text-white' : 'border-transparent text-indigo-200 hover:text-white'}`}
+                    >
+                        <Camera className="w-4 h-4" /> Koreksi LJK
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('database')}
+                        className={`flex items-center gap-2 px-4 py-3 border-b-4 whitespace-nowrap transition-colors ${activeTab === 'database' ? 'border-indigo-300 font-semibold text-white' : 'border-transparent text-indigo-200 hover:text-white'}`}
+                    >
+                        <Database className="w-4 h-4" /> Data Hasil
+                        {resultsDB.length > 0 && (
+                        <span className="bg-indigo-500 text-xs px-2 py-0.5 rounded-full">{resultsDB.length}</span>
+                        )}
+                    </button>
+                    </div>
+                </header>
 
-          <div className="flex justify-end space-x-3">
-             <button 
-                onClick={() => setScanResult(null)}
-                className="px-4 py-2 bg-white border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-100"
-              >
-                Batal / Ulangi
-             </button>
-             <button 
-                onClick={saveToDatabase}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md font-medium"
-              >
-                Simpan ke Database
-             </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+                {notification && (
+                    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md transition-opacity duration-300">
+                    <div className={`p-4 rounded-lg shadow-lg flex items-start gap-3 ${notification.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-green-50 text-green-800 border border-green-200'}`}>
+                        {notification.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle className="w-5 h-5 shrink-0" />}
+                        <p className="text-sm font-medium">{notification.message}</p>
+                    </div>
+                    </div>
+                )}
 
-  const renderTabDatabase = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Database Hasil Koreksi</h2>
-          <p className="text-sm text-slate-500">Total data tersimpan: {database.length} Siswa</p>
-        </div>
-        <button 
-          onClick={exportToCSV}
-          disabled={database.length === 0}
-          className={`flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors
-            ${database.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}
-          `}
-        >
-          <IconDownload />
-          <span className="ml-2">Download Excel (CSV)</span>
-        </button>
-      </div>
+                <main className="max-w-5xl mx-auto p-4 py-6">
+                    
+                    {activeTab === 'setup' && (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800">Kunci Jawaban Pilihan Ganda</h2>
+                            <p className="text-sm text-slate-500">Masukkan kunci jawaban yang benar untuk 40 soal.</p>
+                        </div>
+                        <div className="text-sm">
+                            Status: <span className={isAnswerKeyComplete() ? "text-green-600 font-bold" : "text-amber-600 font-bold"}>
+                            {isAnswerKeyComplete() ? 'Lengkap (40/40)' : 'Belum Lengkap'}
+                            </span>
+                        </div>
+                        </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
-              <th className="p-4 font-semibold">No</th>
-              <th className="p-4 font-semibold">Waktu</th>
-              <th className="p-4 font-semibold">NIS</th>
-              <th className="p-4 font-semibold">Nama Siswa</th>
-              <th className="p-4 font-semibold text-center">B/S/K</th>
-              <th className="p-4 font-semibold text-right">Nilai Akhir</th>
-            </tr>
-          </thead>
-          <tbody>
-            {database.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="p-8 text-center text-slate-500">
-                  Belum ada data. Silakan scan LJK terlebih dahulu.
-                </td>
-              </tr>
-            ) : (
-              database.map((row, index) => (
-                <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td className="p-4 text-slate-500">{index + 1}</td>
-                  <td className="p-4 text-sm text-slate-600">{row.waktu}</td>
-                  <td className="p-4 text-slate-800">{row.nis}</td>
-                  <td className="p-4 font-medium text-slate-800">{row.nama}</td>
-                  <td className="p-4 text-center text-sm">
-                    <span className="text-emerald-600 font-medium">{row.benar}</span> / 
-                    <span className="text-red-500 font-medium ml-1">{row.salah}</span> / 
-                    <span className="text-slate-400 font-medium ml-1">{row.kosong}</span>
-                  </td>
-                  <td className="p-4 text-right font-bold text-blue-600">{row.nilai}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
+                        {Array.from({ length: TOTAL_QUESTIONS }).map((_, idx) => {
+                            const num = idx + 1;
+                            return (
+                            <div key={num} className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                <label className="text-sm font-medium text-slate-500 w-6 text-right">{num}.</label>
+                                <select
+                                value={answerKey[num]}
+                                onChange={(e) => handleAnswerKeyChange(num, e.target.value)}
+                                className={`flex-1 text-sm rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-1.5 bg-white ${answerKey[num] ? 'font-bold text-indigo-700' : 'text-slate-400'}`}
+                                >
+                                <option value="">-</option>
+                                {OPTIONS.map(opt => (
+                                    <option key={opt} value={opt}>{opt.toUpperCase()}</option>
+                                ))}
+                                </select>
+                            </div>
+                            );
+                        })}
+                        </div>
+                        
+                        <div className="mt-8 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                        <p className="text-sm text-indigo-800 text-center">
+                            Setelah semua kunci jawaban terisi, Anda siap melakukan koreksi otomatis di tab <strong>Koreksi LJK</strong>.
+                        </p>
+                        </div>
+                    </div>
+                    )}
 
-  return (
-    <div className="min-h-screen bg-slate-100 font-sans pb-12">
-      {/* Header */}
-      <header className="bg-blue-600 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-extrabold tracking-tight">AutoKoreksi LJK</h1>
-          <p className="text-blue-100 mt-1">Sistem Penilaian Ujian Otomatis Berbasis AI</p>
-        </div>
-      </header>
+                    {activeTab === 'koreksi' && (
+                    <div className="space-y-6">
+                        {!isAnswerKeyComplete() && (
+                        <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div>
+                            <p className="font-semibold">Perhatian</p>
+                            <p className="text-sm mt-1">Kunci jawaban belum lengkap. Sistem tidak dapat menghitung nilai dengan akurat. Harap lengkapi kunci jawaban di tab <strong>Setup Kunci</strong> terlebih dahulu.</p>
+                            </div>
+                        </div>
+                        )}
 
-      <main className="max-w-5xl mx-auto px-4 mt-8">
-        
-        {/* Navigation Tabs */}
-        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-8">
-          <button 
-            onClick={() => setActiveTab('kunci')}
-            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
-              ${activeTab === 'kunci' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
-            `}
-          >
-            <IconKey /> <span className="ml-2 hidden sm:inline">1. Input Kunci</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('scan')}
-            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
-              ${activeTab === 'scan' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
-            `}
-          >
-            <IconCamera /> <span className="ml-2 hidden sm:inline">2. Scan LJK Siswa</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('database')}
-            className={`flex-1 flex justify-center items-center py-3 rounded-lg text-sm font-semibold transition-all
-              ${activeTab === 'database' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
-            `}
-          >
-            <IconDatabase /> <span className="ml-2 hidden sm:inline">3. Database Hasil</span>
-          </button>
-        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col gap-5">
+                            <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Siswa</label>
+                            <input
+                                type="text"
+                                value={studentName}
+                                onChange={(e) => setStudentName(e.target.value)}
+                                placeholder="Contoh: Budi Santoso"
+                                className="w-full rounded-lg border-slate-300 border p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-shadow"
+                            />
+                            </div>
 
-        {/* Content Area */}
-        <div className="transition-all duration-300">
-          {activeTab === 'kunci' && renderTabKunci()}
-          {activeTab === 'scan' && renderTabScan()}
-          {activeTab === 'database' && renderTabDatabase()}
-        </div>
+                            <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Input Lembar Jawaban (Foto)</label>
+                            
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <button 
+                                onClick={() => cameraInputRef.current?.click()}
+                                className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-lg p-4 transition-colors text-slate-600"
+                                >
+                                <Camera className="w-6 h-6" />
+                                <span className="text-xs font-medium">Buka Kamera</span>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    className="hidden" 
+                                    ref={cameraInputRef}
+                                    onChange={handleImageUpload}
+                                />
+                                </button>
 
-      </main>
-    </div>
-  );
-}
+                                <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-lg p-4 transition-colors text-slate-600"
+                                >
+                                <Upload className="w-6 h-6" />
+                                <span className="text-xs font-medium">Unggah File</span>
+                                <input 
+                                    type="file" 
+                                    accept="image/jpeg, image/png" 
+                                    className="hidden" 
+                                    ref={fileInputRef}
+                                    onChange={handleImageUpload}
+                                />
+                                </button>
+                            </div>
+
+                            {imagePreview ? (
+                                <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[200px]">
+                                <img src={imagePreview} alt="Preview" className="max-h-[300px] object-contain" />
+                                <button 
+                                    onClick={() => {setImagePreview(null); setImageFile(null);}}
+                                    className="absolute top-2 right-2 bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-600 transition-colors backdrop-blur-sm"
+                                >
+                                    <XCircle className="w-5 h-5" />
+                                </button>
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center min-h-[200px] text-slate-400">
+                                <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
+                                <span className="text-sm">Belum ada gambar yang dipilih</span>
+                                </div>
+                            )}
+                            </div>
+
+                            <div className="pt-2">
+                            <button
+                                onClick={handleProcessImage}
+                                disabled={isProcessing || !imageFile || !studentName.trim() || !isAnswerKeyComplete()}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {isProcessing ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Sedang Mengoreksi...
+                                </>
+                                ) : (
+                                <>
+                                    <CheckCircle className="w-5 h-5" />
+                                    Koreksi Sekarang
+                                </>
+                                )}
+                            </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                            <div className="bg-slate-50 p-4 border-b border-slate-200">
+                            <h2 className="text-base font-bold text-slate-800">Hasil Koreksi</h2>
+                            </div>
+                            
+                            <div className="p-5 flex-1 flex flex-col">
+                            {isProcessing ? (
+                                <div className="flex-1 flex flex-col items-center justify-center text-indigo-600 gap-4 py-12">
+                                <Loader2 className="w-12 h-12 animate-spin opacity-80" />
+                                <p className="text-sm font-medium animate-pulse text-center px-4">
+                                    AI sedang membaca pola Lembar Jawaban...<br/>
+                                    <span className="text-xs text-slate-500">Menganalisa coretan & tanda silang</span>
+                                </p>
+                                </div>
+                            ) : currentResult ? (
+                                <div>
+                                <div className="text-center mb-6">
+                                    <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Nilai Akhir</p>
+                                    <div className="text-6xl font-black text-indigo-600 mb-2">{currentResult.score}</div>
+                                    <p className="text-lg font-bold text-slate-800">{currentResult.name}</p>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3 mb-6">
+                                    <div className="bg-green-50 p-3 rounded-lg border border-green-100 text-center">
+                                    <div className="text-2xl font-bold text-green-600">{currentResult.correct}</div>
+                                    <div className="text-xs font-medium text-green-800 mt-1">BENAR</div>
+                                    </div>
+                                    <div className="bg-red-50 p-3 rounded-lg border border-red-100 text-center">
+                                    <div className="text-2xl font-bold text-red-600">{currentResult.wrong}</div>
+                                    <div className="text-xs font-medium text-red-800 mt-1">SALAH</div>
+                                    </div>
+                                    <div className="bg-slate-100 p-3 rounded-lg border border-slate-200 text-center">
+                                    <div className="text-2xl font-bold text-slate-600">{currentResult.empty}</div>
+                                    <div className="text-xs font-medium text-slate-700 mt-1">KOSONG</div>
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-100 rounded-lg overflow-hidden">
+                                    <div className="bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500 flex justify-between">
+                                    <span>Detail Jawaban Siswa</span>
+                                    </div>
+                                    <div className="p-3 max-h-[220px] overflow-y-auto no-scrollbar grid grid-cols-4 gap-x-2 gap-y-1 text-xs">
+                                    {Array.from({ length: TOTAL_QUESTIONS }).map((_, idx) => {
+                                        const num = idx + 1;
+                                        const detail = currentResult.details[num];
+                                        const isCorrect = detail.status === 'correct';
+                                        const isEmpty = detail.status === 'empty';
+                                        
+                                        let bgColor = isCorrect ? 'bg-green-100 text-green-800' : 
+                                                    isEmpty ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-800';
+                                        
+                                        return (
+                                        <div key={num} className={`flex justify-between items-center px-1.5 py-1 rounded ${bgColor}`}>
+                                            <span className="font-semibold w-5 text-right">{num}.</span>
+                                            <span className="uppercase font-bold">{detail.studentAnswer}</span>
+                                        </div>
+                                        )
+                                    })}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={resetForm}
+                                    className="mt-6 w-full py-2.5 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
+                                >
+                                    Koreksi Siswa Berikutnya
+                                </button>
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-3 py-12">
+                                <CheckCircle className="w-12 h-12 opacity-20" />
+                                <p className="text-sm font-medium text-center px-8">Hasil koreksi akan muncul di sini setelah Anda memproses gambar.</p>
+                                </div>
+                            )}
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    )}
+
+                    {activeTab === 'database' && (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800">Data Hasil Koreksi</h2>
+                            <p className="text-sm text-slate-500">Total {resultsDB.length} siswa telah dikoreksi.</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <button
+                            onClick={exportToCSV}
+                            disabled={resultsDB.length === 0}
+                            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                            >
+                            <FileSpreadsheet className="w-4 h-4" /> Export Excel (CSV)
+                            </button>
+                        </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-slate-500 uppercase bg-slate-50">
+                            <tr>
+                                <th className="px-6 py-3">Waktu</th>
+                                <th className="px-6 py-3">Nama Siswa</th>
+                                <th className="px-6 py-3 text-center">Benar</th>
+                                <th className="px-6 py-3 text-center">Salah</th>
+                                <th className="px-6 py-3 text-center">Kosong</th>
+                                <th className="px-6 py-3 text-center font-bold text-indigo-600">Nilai Akhir</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {resultsDB.length === 0 ? (
+                                <tr>
+                                <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
+                                    Belum ada data hasil koreksi.
+                                </td>
+                                </tr>
+                            ) : (
+                                resultsDB.map((row) => (
+                                <tr key={row.id} className="bg-white border-b hover:bg-slate-50 transition-colors">
+                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{row.date.split(',')[1] || row.date}</td>
+                                    <td className="px-6 py-4 font-semibold text-slate-800">{row.name}</td>
+                                    <td className="px-6 py-4 text-center text-green-600 font-medium">{row.correct}</td>
+                                    <td className="px-6 py-4 text-center text-red-600 font-medium">{row.wrong}</td>
+                                    <td className="px-6 py-4 text-center text-slate-500">{row.empty}</td>
+                                    <td className="px-6 py-4 text-center font-bold text-lg text-indigo-600">{row.score}</td>
+                                </tr>
+                                ))
+                            )}
+                            </tbody>
+                        </table>
+                        </div>
+                        
+                        {resultsDB.length > 0 && (
+                        <div className="p-4 bg-slate-50 border-t border-slate-200 text-right">
+                            <button 
+                            onClick={clearDatabase}
+                            className="text-xs text-red-600 hover:text-red-800 font-medium px-3 py-1.5 rounded hover:bg-red-50 transition-colors"
+                            >
+                            Hapus Semua Data
+                            </button>
+                        </div>
+                        )}
+                    </div>
+                    )}
+
+                </main>
+                </div>
+            );
+        }
+
+        // Render aplikasi
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
