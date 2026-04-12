@@ -52,10 +52,11 @@
         // --- KONFIGURASI UTAMA ---
         const OPTIONS = ['a', 'b', 'c', 'd', 'e'];
 
-        // API Key akan otomatis disediakan oleh environment (tidak perlu diset manual jika menggunakan fitur preview)
-        const apiKey = ""; 
+        const analyzeImageWithGemini = async (base64Image, totalQuestions, apiKey) => {
+            if (!apiKey) {
+                throw new Error("API Key Gemini belum diisi. Silakan masukkan API Key di menu Setup Kunci.");
+            }
 
-        const analyzeImageWithGemini = async (base64Image, totalQuestions) => {
             const prompt = `Anda adalah asisten AI ahli pengoreksi ujian. Baca gambar Lembar Jawaban (LJK) ini secara teliti. Terdapat ${totalQuestions} soal pilihan ganda (nomor 1 sampai ${totalQuestions}) dengan opsi a, b, c, d, e.
           Tugas Anda:
           1. Identifikasi pilihan mana yang diberi tanda silang (X) oleh siswa untuk setiap nomor (1 sampai ${totalQuestions}).
@@ -126,6 +127,9 @@
         function App() {
             const [activeTab, setActiveTab] = useState('setup');
             
+            // State untuk API Key (Disimpan di Local Storage agar tidak hilang)
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('geminiApiKey') || '');
+
             // State untuk Jumlah Soal (Dinamis)
             const [totalQuestions, setTotalQuestions] = useState(40);
             
@@ -151,6 +155,12 @@
             const showNotification = (message, type = 'info') => {
                 setNotification({ message, type });
                 setTimeout(() => setNotification(null), 5000);
+            };
+
+            const handleApiKeyChange = (e) => {
+                const val = e.target.value;
+                setApiKey(val);
+                localStorage.setItem('geminiApiKey', val);
             };
 
             const handleAnswerKeyChange = (num, value) => {
@@ -202,8 +212,8 @@
 
                 try {
                 const base64Image = await fileToBase64(imageFile);
-                // Parsing total questions parameter ke AI
-                const studentAnswers = await analyzeImageWithGemini(base64Image, totalQuestions);
+                // Parsing parameter ke AI
+                const studentAnswers = await analyzeImageWithGemini(base64Image, totalQuestions, apiKey);
 
                 let correct = 0;
                 let wrong = 0;
@@ -321,7 +331,7 @@
                     <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-2">
                         <CheckCircle className="w-6 h-6 text-indigo-200" />
-                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK BY MUSADAD.COM SMK MUTAHIR</h1>
+                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK</h1>
                     </div>
                     </div>
                     
@@ -364,6 +374,19 @@
                     {activeTab === 'setup' && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                         
+                        {/* Input API Key */}
+                        <div className="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                            <label className="block text-sm font-bold text-indigo-900 mb-1">API Key Gemini (Wajib untuk penggunaan di luar aplikasi web ini)</label>
+                            <p className="text-xs text-indigo-700 mb-3">Dapatkan API Key secara gratis di <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline font-bold hover:text-indigo-900">Google AI Studio</a>.</p>
+                            <input
+                                type="password"
+                                value={apiKey}
+                                onChange={handleApiKeyChange}
+                                placeholder="Paste API Key Anda di sini bermula dengan AIza..."
+                                className="w-full rounded-lg border border-indigo-300 p-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+
                         {/* Input Jumlah Soal */}
                         <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
