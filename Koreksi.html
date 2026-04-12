@@ -52,14 +52,10 @@
         // --- KONFIGURASI UTAMA ---
         const OPTIONS = ['a', 'b', 'c', 'd', 'e'];
 
-        // PERHATIAN: Masukkan API Key Gemini Anda di sini jika ingin dipakai di lokal komputer Anda.
+        // API Key akan otomatis disediakan oleh environment (tidak perlu diset manual jika menggunakan fitur preview)
         const apiKey = ""; 
 
         const analyzeImageWithGemini = async (base64Image, totalQuestions) => {
-            if (!apiKey) {
-                throw new Error("API Key belum disetting. Silakan buka file HTML dan masukkan apiKey Anda.");
-            }
-
             const prompt = `Anda adalah asisten AI ahli pengoreksi ujian. Baca gambar Lembar Jawaban (LJK) ini secara teliti. Terdapat ${totalQuestions} soal pilihan ganda (nomor 1 sampai ${totalQuestions}) dengan opsi a, b, c, d, e.
           Tugas Anda:
           1. Identifikasi pilihan mana yang diberi tanda silang (X) oleh siswa untuk setiap nomor (1 sampai ${totalQuestions}).
@@ -325,7 +321,7 @@
                     <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-2">
                         <CheckCircle className="w-6 h-6 text-indigo-200" />
-                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK BY MUSADAD.COM SMK MUTAKHIR</h1>
+                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK</h1>
                     </div>
                     </div>
                     
