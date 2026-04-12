@@ -50,24 +50,23 @@
         const Database = (p) => <IconBase {...p}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></IconBase>;
 
         // --- KONFIGURASI UTAMA ---
-        const TOTAL_QUESTIONS = 40;
         const OPTIONS = ['a', 'b', 'c', 'd', 'e'];
 
         // PERHATIAN: Masukkan API Key Gemini Anda di sini jika ingin dipakai di lokal komputer Anda.
         const apiKey = ""; 
 
-        const analyzeImageWithGemini = async (base64Image) => {
+        const analyzeImageWithGemini = async (base64Image, totalQuestions) => {
             if (!apiKey) {
                 throw new Error("API Key belum disetting. Silakan buka file HTML dan masukkan apiKey Anda.");
             }
 
-            const prompt = `Anda adalah asisten AI ahli pengoreksi ujian. Baca gambar Lembar Jawaban (LJK) ini secara teliti. Terdapat 40 soal pilihan ganda (nomor 1 sampai 40) dengan opsi a, b, c, d, e.
+            const prompt = `Anda adalah asisten AI ahli pengoreksi ujian. Baca gambar Lembar Jawaban (LJK) ini secara teliti. Terdapat ${totalQuestions} soal pilihan ganda (nomor 1 sampai ${totalQuestions}) dengan opsi a, b, c, d, e.
           Tugas Anda:
-          1. Identifikasi pilihan mana yang diberi tanda silang (X) oleh siswa untuk setiap nomor (1 sampai 40).
+          1. Identifikasi pilihan mana yang diberi tanda silang (X) oleh siswa untuk setiap nomor (1 sampai ${totalQuestions}).
           2. Perhatikan aturan perbaikan (sesuai petunjuk di kertas): Jika ada jawaban awal yang dicoret (misal dengan garis dua horizontal), abaikan itu dan cari tanda silang (X) yang baru di nomor tersebut.
           3. Kembalikan HANYA format JSON murni yang berisi pasangan nomor soal (sebagai string) dan jawaban (sebagai string huruf kecil 'a', 'b', 'c', 'd', atau 'e'). Jika nomor tersebut tidak dijawab, dibiarkan kosong, atau tidak terbaca, gunakan nilai null.
           Contoh output wajib (tanpa teks awalan/akhiran apapun, murni JSON):
-          {"1":"a","2":"c","3":null,"4":"e" ... dan seterusnya sampai 40}
+          {"1":"a","2":"c","3":null,"4":"e" ... dan seterusnya sampai ${totalQuestions}}
           Jangan tambahkan karakter markdown (\`\`\`json) atau teks apapun selain objek JSON itu sendiri.`;
 
             const payload = {
@@ -129,11 +128,15 @@
 
         // --- KOMPONEN UTAMA ---
         function App() {
-            const [activeTab, setActiveTab] = useState('koreksi');
+            const [activeTab, setActiveTab] = useState('setup');
             
+            // State untuk Jumlah Soal (Dinamis)
+            const [totalQuestions, setTotalQuestions] = useState(40);
+            
+            // Siapkan state kunci jawaban lebih panjang untuk antisipasi (max 50)
             const [answerKey, setAnswerKey] = useState(() => {
                 const initial = {};
-                for (let i = 1; i <= TOTAL_QUESTIONS; i++) initial[i] = '';
+                for (let i = 1; i <= 50; i++) initial[i] = '';
                 return initial;
             });
 
@@ -158,8 +161,12 @@
                 setAnswerKey(prev => ({ ...prev, [num]: value }));
             };
 
+            // Pengecekan kunci jawaban menyesuaikan dengan jumlah soal yang dipilih
             const isAnswerKeyComplete = () => {
-                return Object.values(answerKey).every(val => val !== '');
+                for (let i = 1; i <= totalQuestions; i++) {
+                    if (!answerKey[i]) return false;
+                }
+                return true;
             };
 
             const handleImageUpload = async (e) => {
@@ -190,7 +197,7 @@
                 return;
                 }
                 if (!isAnswerKeyComplete()) {
-                showNotification("Kunci jawaban belum lengkap! Silakan lengkapi di menu Setup Kunci.", "error");
+                showNotification(`Kunci jawaban belum lengkap untuk ${totalQuestions} soal! Silakan lengkapi di menu Setup Kunci.`, "error");
                 return;
                 }
 
@@ -199,14 +206,15 @@
 
                 try {
                 const base64Image = await fileToBase64(imageFile);
-                const studentAnswers = await analyzeImageWithGemini(base64Image);
+                // Parsing total questions parameter ke AI
+                const studentAnswers = await analyzeImageWithGemini(base64Image, totalQuestions);
 
                 let correct = 0;
                 let wrong = 0;
                 let empty = 0;
                 const details = {};
 
-                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                for (let i = 1; i <= totalQuestions; i++) {
                     const studentAns = studentAnswers[i.toString()]?.toLowerCase();
                     const correctAns = answerKey[i.toString()]?.toLowerCase();
                     
@@ -230,7 +238,7 @@
                     };
                 }
 
-                const score = Math.round((correct / TOTAL_QUESTIONS) * 100);
+                const score = Math.round((correct / totalQuestions) * 100);
 
                 const result = {
                     id: Date.now(),
@@ -271,7 +279,7 @@
                 }
 
                 const headers = ["Waktu", "Nama Siswa", "Nilai Akhir", "Benar", "Salah", "Kosong"];
-                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                for (let i = 1; i <= totalQuestions; i++) {
                 headers.push(`Soal ${i}`);
                 }
 
@@ -287,8 +295,8 @@
                     row.wrong,
                     row.empty
                 ];
-                for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
-                    rowData.push(`"${row.details[i].studentAnswer.toUpperCase()}"`);
+                for (let i = 1; i <= totalQuestions; i++) {
+                    rowData.push(`"${row.details[i]?.studentAnswer?.toUpperCase() || '-'}"`);
                 }
                 csvRows.push(rowData.join(','));
                 });
@@ -359,20 +367,42 @@
                     
                     {activeTab === 'setup' && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                        <div>
-                            <h2 className="text-lg font-bold text-slate-800">Kunci Jawaban Pilihan Ganda</h2>
-                            <p className="text-sm text-slate-500">Masukkan kunci jawaban yang benar untuk 40 soal.</p>
+                        
+                        {/* Input Jumlah Soal */}
+                        <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-800">Jumlah Soal</label>
+                                <p className="text-xs text-slate-500">Tentukan batas soal yang akan dikoreksi (Maks 50)</p>
+                            </div>
+                            <input
+                                type="number"
+                                min="1"
+                                max="50"
+                                value={totalQuestions}
+                                onChange={(e) => {
+                                    let val = parseInt(e.target.value);
+                                    if (val > 50) val = 50;
+                                    if (val < 1) val = 1;
+                                    setTotalQuestions(val || 1);
+                                }}
+                                className="w-24 rounded-lg border border-slate-300 p-2 text-center font-bold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                            />
                         </div>
-                        <div className="text-sm">
-                            Status: <span className={isAnswerKeyComplete() ? "text-green-600 font-bold" : "text-amber-600 font-bold"}>
-                            {isAnswerKeyComplete() ? 'Lengkap (40/40)' : 'Belum Lengkap'}
-                            </span>
-                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-800">Kunci Jawaban Pilihan Ganda</h2>
+                                <p className="text-sm text-slate-500">Masukkan kunci jawaban yang benar untuk {totalQuestions} soal.</p>
+                            </div>
+                            <div className="text-sm">
+                                Status: <span className={isAnswerKeyComplete() ? "text-green-600 font-bold" : "text-amber-600 font-bold"}>
+                                {isAnswerKeyComplete() ? `Lengkap (${totalQuestions}/${totalQuestions})` : 'Belum Lengkap'}
+                                </span>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
-                        {Array.from({ length: TOTAL_QUESTIONS }).map((_, idx) => {
+                        {Array.from({ length: totalQuestions }).map((_, idx) => {
                             const num = idx + 1;
                             return (
                             <div key={num} className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
@@ -380,7 +410,7 @@
                                 <select
                                 value={answerKey[num]}
                                 onChange={(e) => handleAnswerKeyChange(num, e.target.value)}
-                                className={`flex-1 text-sm rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-1.5 bg-white ${answerKey[num] ? 'font-bold text-indigo-700' : 'text-slate-400'}`}
+                                className={`flex-1 text-sm rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-1.5 bg-white outline-none ${answerKey[num] ? 'font-bold text-indigo-700' : 'text-slate-400'}`}
                                 >
                                 <option value="">-</option>
                                 {OPTIONS.map(opt => (
@@ -407,7 +437,7 @@
                             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                             <div>
                             <p className="font-semibold">Perhatian</p>
-                            <p className="text-sm mt-1">Kunci jawaban belum lengkap. Sistem tidak dapat menghitung nilai dengan akurat. Harap lengkapi kunci jawaban di tab <strong>Setup Kunci</strong> terlebih dahulu.</p>
+                            <p className="text-sm mt-1">Kunci jawaban belum lengkap. Sistem tidak dapat menghitung nilai dengan akurat. Harap lengkapi kunci jawaban untuk {totalQuestions} soal di tab <strong>Setup Kunci</strong> terlebih dahulu.</p>
                             </div>
                         </div>
                         )}
@@ -542,7 +572,7 @@
                                     <span>Detail Jawaban Siswa</span>
                                     </div>
                                     <div className="p-3 max-h-[220px] overflow-y-auto no-scrollbar grid grid-cols-4 gap-x-2 gap-y-1 text-xs">
-                                    {Array.from({ length: TOTAL_QUESTIONS }).map((_, idx) => {
+                                    {Array.from({ length: totalQuestions }).map((_, idx) => {
                                         const num = idx + 1;
                                         const detail = currentResult.details[num];
                                         const isCorrect = detail.status === 'correct';
