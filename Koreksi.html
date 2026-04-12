@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Koreksi LJK AI</title>
+    <title>Aplikasi Koreksi LJK AI  </title>
     
     <!-- Tailwind CSS untuk Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -78,20 +78,33 @@
                 ]
             };
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const retries = 5;
             const delays = [1000, 2000, 4000, 8000, 16000];
             
             for (let i = 0; i < retries; i++) {
                 try {
-                const response = await fetch(url, {
+                let response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
+                // Fallback jika model preview 404 saat dijalankan secara standalone di komputer lokal
+                if (response.status === 404) {
+                    url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
                 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 400) throw new Error("API Key tidak valid! Pastikan Anda memasukkan API Key yang benar (dimulai dengan AIza...) dari Google AI Studio.");
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -331,7 +344,7 @@
                     <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-2">
                         <CheckCircle className="w-6 h-6 text-indigo-200" />
-                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK</h1>
+                        <h1 className="text-xl font-bold tracking-tight">KoreksiAI LJK BY MUSADAD.COM SMK MUTAHIR</h1>
                     </div>
                     </div>
                     
@@ -377,7 +390,7 @@
                         {/* Input API Key */}
                         <div className="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
                             <label className="block text-sm font-bold text-indigo-900 mb-1">API Key Gemini (Wajib untuk penggunaan di luar aplikasi web ini)</label>
-                            <p className="text-xs text-indigo-700 mb-3">Dapatkan API Key secara gratis di <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline font-bold hover:text-indigo-900">Google AI Studio</a>.</p>
+                            <p className="text-xs text-indigo-700 mb-3">Dapatkan API copy ini kebawah : AIzaSyAskj_jS9A5jMnAd5I0RQzQIVyQbsyG9SE <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline font-bold hover:text-indigo-900">Google AI Studio</a>.</p>
                             <input
                                 type="password"
                                 value={apiKey}
