@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian Belum Dimulai - SMK Mutakhir Petir</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+
+    <!-- 1. HEADER / BANNER AREA (Sama seperti halaman utama) -->
+    <header class="relative bg-gradient-to-r from-[#2c104d] via-[#4d1664] to-[#6a1a5b] overflow-hidden text-white shadow-xl pb-16">
+        <!-- Latar Belakang Dekoratif -->
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-4 right-10 flex space-x-12">
+                <i data-lucide="settings" class="w-16 h-16 text-blue-300 animate-[spin_10s_linear_infinite]"></i>
+                <i data-lucide="microscope" class="w-16 h-16 text-purple-300"></i>
+                <i data-lucide="cpu" class="w-16 h-16 text-pink-300"></i>
+            </div>
+            <svg class="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,50 Q100,20 200,60 T400,50 T600,80 T800,40" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+                <path d="M0,100 Q150,150 250,90 T500,120 T700,90 T1000,130" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            </svg>
+        </div>
+
+        <!-- Konten Utama Header -->
+        <div class="relative z-10 container mx-auto px-4 py-8 lg:py-12 flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
+            <div class="flex items-center gap-6 w-full">
+                <!-- Logo Sekolah -->
+                <div class="bg-white rounded-full h-24 w-24 flex-shrink-0 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(255,255,255,0.3)] border-4 border-purple-200 overflow-hidden">
+                    <img 
+                        src="https://musadad87.github.io/GAJAR/Logo%20Mutaakhirin-3.png" 
+                        alt="Logo SMK Mutakhir Petir" 
+                        class="w-full h-full object-contain"
+                    />
+                </div>
+                <!-- Teks Header -->
+                <div class="flex-1">
+                    <h1 class="text-xl md:text-3xl font-extrabold tracking-wide drop-shadow-md">
+                        SMK MUTAKHIR PETIR
+                    </h1>
+                    <h2 class="text-2xl md:text-4xl font-black mt-1 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-200 drop-shadow-lg">
+                        UJI KOMPETENSI KEAHLIAN (UKK)
+                    </h2>
+                    <p class="text-sm md:text-lg font-medium text-purple-100">
+                        Tahun Pelajaran 2025/2026
+                    </p>
+                </div>
+            </div>
+            <div class="hidden lg:flex items-end justify-end h-full w-full absolute bottom-4 right-6">
+                <p class="font-bold tracking-widest text-sm text-purple-200 uppercase">
+                    Petir, Serang - Banten
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT (Informasi Ujian Belum Dimulai) -->
+    <main class="flex-grow container mx-auto px-4 -mt-12 relative z-20 max-w-3xl mb-12">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-100 p-8 md:p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+            
+            <!-- Ikon Animasi -->
+            <div class="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <i data-lucide="clock" class="w-12 h-12 text-orange-500 animate-pulse"></i>
+            </div>
+            
+            <!-- Teks Peringatan -->
+            <h3 class="text-3xl font-extrabold text-slate-800 mb-4">
+                Ujian Belum Dimulai
+            </h3>
+            
+            <p class="text-lg text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                Maaf, akses ke soal ujian untuk sesi ini belum dibuka. Silakan tunggu sesuai dengan jadwal yang telah ditentukan atau hubungi pengawas ujian.
+            </p>
+            
+            <!-- Tombol Kembali -->
+            <button onclick="window.location.href='https://musadad87.github.io/GAJAR/Ujian1.html'" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-3">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="text-lg">Kembali</span>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Inisialisasi Ikon -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
