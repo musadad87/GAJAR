@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Nota Apotek 58mm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Gaya khusus kanggo font struk */
+        .font-receipt {
+            font-family: 'Courier Prime', monospace;
+            text-transform: uppercase;
+        }
+        
+        .dot-matrix {
+            font-family: 'VT323', monospace;
+            letter-spacing: 1px;
+        }
+
+        /* Aturan Print */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm; /* Lebar kertas thermal standar */
+                margin: 0;
+                padding: 0;
+            }
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Preview container */
+        .receipt-preview {
+            width: 58mm;
+            min-height: 100mm;
+            background: white;
+            padding: 4mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            color: #000;
+        }
+
+        .line-dash {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Bagian Input Form -->
+        <div class="bg-white p-6 rounded-lg shadow-md no-print">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">Input Data Nota</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium">Nami Apotek</label>
+                    <input type="text" id="storeName" value="APOTEK CAHAYA FARMA" class="w-full p-2 border rounded mt-1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Alamat</label>
+                    <textarea id="storeAddress" class="w-full p-2 border rounded mt-1">Jl. Petir/Ki Ajurum simpang 3 cipocok jaya-serang</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Telp</label>
+                    <input type="text" id="storePhone" value="0877888006812" class="w-full p-2 border rounded mt-1">
+                </div>
+                
+                <hr>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-medium">No. Nota</label>
+                        <input type="text" id="notaNo" value="REG.20260501.001" class="w-full p-2 border rounded mt-1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Kasir</label>
+                        <input type="text" id="kasirName" value="SODRI" class="w-full p-2 border rounded mt-1">
+                    </div>
+                </div>
+
+                <hr>
+
+                <h3 class="font-bold">Daftar Barang</h3>
+                <div id="itemsContainer" class="space-y-2">
+                    <div class="flex gap-2 items-end item-row">
+                        <div class="flex-1">
+                            <label class="text-xs">Nami Barang</label>
+                            <input type="text" class="itemName w-full p-2 border rounded text-sm" value="GENERAL CARE">
+                        </div>
+                        <div class="w-16">
+                            <label class="text-xs">Qty</label>
+                            <input type="number" class="itemQty w-full p-2 border rounded text-sm" value="4">
+                        </div>
+                        <div class="w-24">
+                            <label class="text-xs">Harga</label>
+                            <input type="number" class="itemPrice w-full p-2 border rounded text-sm" value="20000">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="addItem()" class="text-blue-500 text-sm hover:underline">+ Tambah Barang</button>
+
+                <div class="pt-4">
+                    <button onclick="window.print()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                        CETAK NOTA
+                    </button>
+                    <p class="text-xs text-center mt-2 text-gray-500 italic">Pikeun hasil maksimal, setel Margin ka "None" dina dialog print.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bagian Preview Nota -->
+        <div class="flex flex-col items-center">
+            <h2 class="text-lg font-semibold mb-4 no-print text-gray-700">Sawangan (Preview 58mm)</h2>
+            
+            <div id="printArea" class="receipt-preview font-receipt text-[10px]">
+                <!-- Header -->
+                <div class="text-center">
+                    <div class="font-bold text-xs" id="dispStoreName">APOTEK CAHAYA FARMA</div>
+                    <div class="leading-tight" id="dispStoreAddress">Jl. Petir/Ki Ajurum simpang 3 cipocok jaya-serang</div>
+                    <div id="dispStorePhone">Telp. 0877888006812</div>
+                </div>
+
+                <div class="line-dash"></div>
+
+                <!-- Info Nota -->
+                <div class="grid grid-cols-1 gap-0">
+                    <div class="flex justify-between">
+                        <span>NO. NOTA</span>
+                        <span id="dispNotaNo">: REG.20260501.001</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>TANGGAL</span>
+                        <span id="dispTanggal">: 01/05/2026</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>JAM</span>
+                        <span id="dispJam">: 10:49:51</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>KASIR</span>
+                        <span id="dispKasir">: SODRI</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>NAMA</span>
+                        <span>: UMUM</span>
+                    </div>
+                </div>
+
+                <div class="line-dash"></div>
+                <div class="font-bold mb-1">DETAIL BARANG :</div>
+
+                <!-- Barang List -->
+                <div id="dispItemsList">
+                    <!-- Dinamis via JS -->
+                </div>
+
+                <div class="line-dash"></div>
+
+                <!-- Total -->
+                <div class="space-y-1">
+                    <div class="flex justify-between">
+                        <span>TOTAL :</span>
+                        <span id="dispTotal">RP. 80.000</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>POTONGAN :</span>
+                        <span>0</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-xs">
+                        <span>TOTAL HARGA :</span>
+                        <span id="dispTotalHarga">RP. 80.000</span>
+                    </div>
+                </div>
+
+                <div class="line-dash mt-4"></div>
+
+                <!-- Footer -->
+                <div class="text-center mt-2 leading-tight">
+                    <div>TERIMA KASIH ATAS KUNJUNGANNYA</div>
+                    <div class="mt-1">BARANG YANG DIBELI TIDAK BISA DITUKARKAN KEMBALI</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi Update Realtime
+        function updateReceipt() {
+            document.getElementById('dispStoreName').innerText = document.getElementById('storeName').value;
+            document.getElementById('dispStoreAddress').innerText = document.getElementById('storeAddress').value;
+            document.getElementById('dispStorePhone').innerText = "Telp. " + document.getElementById('storePhone').value;
+            document.getElementById('dispNotaNo').innerText = ": " + document.getElementById('notaNo').value;
+            document.getElementById('dispKasir').innerText = ": " + document.getElementById('kasirName').value;
+
+            // Update Items
+            const items = document.querySelectorAll('.item-row');
+            const listContainer = document.getElementById('dispItemsList');
+            listContainer.innerHTML = '';
+            let total = 0;
+
+            items.forEach(row => {
+                const name = row.querySelector('.itemName').value;
+                const qty = parseInt(row.querySelector('.itemQty').value) || 0;
+                const price = parseInt(row.querySelector('.itemPrice').value) || 0;
+                const subtotal = qty * price;
+                total += subtotal;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'mb-1';
+                itemDiv.innerHTML = `
+                    <div class="font-bold">${name}</div>
+                    <div class="flex justify-between">
+                        <span>${qty} PCS  RP. ${price.toLocaleString('id-ID')}</span>
+                        <span>${subtotal.toLocaleString('id-ID')}</span>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+
+            document.getElementById('dispTotal').innerText = "RP. " + total.toLocaleString('id-ID');
+            document.getElementById('dispTotalHarga').innerText = "RP. " + total.toLocaleString('id-ID');
+
+            // Update Jam & Tanggal
+            const skrg = new Date();
+            document.getElementById('dispTanggal').innerText = ": " + skrg.toLocaleDateString('id-ID');
+            document.getElementById('dispJam').innerText = ": " + skrg.toLocaleTimeString('id-ID');
+        }
+
+        function addItem() {
+            const container = document.getElementById('itemsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'flex gap-2 items-end item-row';
+            newRow.innerHTML = `
+                <div class="flex-1">
+                    <input type="text" class="itemName w-full p-2 border rounded text-sm" value="BARANG BARU">
+                </div>
+                <div class="w-16">
+                    <input type="number" class="itemQty w-full p-2 border rounded text-sm" value="1">
+                </div>
+                <div class="w-24">
+                    <input type="number" class="itemPrice w-full p-2 border rounded text-sm" value="0">
+                </div>
+            `;
+            container.appendChild(newRow);
+            
+            // Re-attach listeners
+            attachListeners();
+            updateReceipt();
+        }
+
+        function attachListeners() {
+            document.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('input', updateReceipt);
+            });
+        }
+
+        // Initial Load
+        window.onload = () => {
+            attachListeners();
+            updateReceipt();
+        };
+    </script>
+</body>
+</html>
