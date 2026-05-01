@@ -43,7 +43,7 @@
             }
         }
 
-        /* Preview container */
+        /* Preview container - Warna dinamis via JS variabel */
         .receipt-preview {
             width: 58mm;
             min-height: 100mm;
@@ -51,12 +51,37 @@
             padding: 4mm;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             margin: 0 auto;
-            color: #000;
+            /* Default Ungu */
+            color: #4b0082; 
+            transition: color 0.3s ease;
         }
 
         .line-dash {
-            border-top: 1px dashed #000;
+            border-top: 1px dashed currentColor;
             margin: 5px 0;
+        }
+
+        /* Mengatur agar saat print warna tetap muncul */
+        @media print {
+            .receipt-preview {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        .color-btn.active {
+            border-color: #3b82f6;
         }
     </style>
 </head>
@@ -69,6 +94,19 @@
             <h2 class="text-xl font-bold mb-4 border-b pb-2">Input Data Nota</h2>
             
             <div class="space-y-4">
+                <!-- Pemilihan Warna Tinta -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Warna Tinta Nota</label>
+                    <div class="flex gap-4">
+                        <button onclick="changeColor('#4b0082', this)" class="color-btn active bg-[#4b0082]" title="Ungu"></button>
+                        <button onclick="changeColor('#0000ff', this)" class="color-btn bg-[#0000ff]" title="Biru"></button>
+                        <button onclick="changeColor('#ff0000', this)" class="color-btn bg-[#ff0000]" title="Merah"></button>
+                        <button onclick="changeColor('#000000', this)" class="color-btn bg-[#000000]" title="Hitam"></button>
+                    </div>
+                </div>
+
+                <hr>
+
                 <div>
                     <label class="block text-sm font-medium">Nama Toko</label>
                     <input type="text" id="storeName" value="APOTEK CAHAYA FARMA" class="w-full p-2 border rounded mt-1">
@@ -210,6 +248,13 @@
     </div>
 
     <script>
+        function changeColor(hex, btn) {
+            document.getElementById('printArea').style.color = hex;
+            // Update active state tombol
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
         function updateReceipt() {
             document.getElementById('dispStoreName').innerText = document.getElementById('storeName').value;
             document.getElementById('dispStoreAddress').innerText = document.getElementById('storeAddress').value;
