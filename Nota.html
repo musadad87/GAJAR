@@ -30,7 +30,7 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 58mm; /* Lebar kertas thermal standar */
+                width: 58mm;
                 margin: 0;
                 padding: 0;
             }
@@ -70,7 +70,7 @@
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium">Nami Apotek</label>
+                    <label class="block text-sm font-medium">Nama Toko</label>
                     <input type="text" id="storeName" value="APOTEK CAHAYA FARMA" class="w-full p-2 border rounded mt-1">
                 </div>
                 <div>
@@ -87,7 +87,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-sm font-medium">No. Nota</label>
-                        <input type="text" id="notaNo" value="REG.20260501.001" class="w-full p-2 border rounded mt-1">
+                        <input type="text" id="notaNo" value="REG.20260501.145343.01" class="w-full p-2 border rounded mt-1">
                     </div>
                     <div>
                         <label class="block text-sm font-medium">Kasir</label>
@@ -97,38 +97,48 @@
 
                 <hr>
 
-                <h3 class="font-bold">Daftar Barang</h3>
-                <div id="itemsContainer" class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold">Daftar Barang</h3>
+                    <button onclick="addItem()" class="bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300">+ Barang</button>
+                </div>
+                
+                <div id="itemsContainer" class="space-y-2 max-h-60 overflow-y-auto pr-2">
                     <div class="flex gap-2 items-end item-row">
                         <div class="flex-1">
-                            <label class="text-xs">Nami Barang</label>
+                            <label class="text-[10px] text-gray-500 uppercase">Nama Barang</label>
                             <input type="text" class="itemName w-full p-2 border rounded text-sm" value="GENERAL CARE">
                         </div>
                         <div class="w-16">
-                            <label class="text-xs">Qty</label>
+                            <label class="text-[10px] text-gray-500 uppercase">Qty</label>
                             <input type="number" class="itemQty w-full p-2 border rounded text-sm" value="4">
                         </div>
                         <div class="w-24">
-                            <label class="text-xs">Harga</label>
+                            <label class="text-[10px] text-gray-500 uppercase">Harga</label>
                             <input type="number" class="itemPrice w-full p-2 border rounded text-sm" value="20000">
                         </div>
                     </div>
                 </div>
 
-                <button onclick="addItem()" class="text-blue-500 text-sm hover:underline">+ Tambah Barang</button>
-
-                <div class="pt-4">
-                    <button onclick="window.print()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                <div class="pt-4 border-t">
+                    <button onclick="handlePrint()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                         CETAK NOTA
                     </button>
-                    <p class="text-xs text-center mt-2 text-gray-500 italic">Pikeun hasil maksimal, setel Margin ka "None" dina dialog print.</p>
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-[11px] text-yellow-800">
+                        <strong>Tips Agar "Langsung Cetak":</strong>
+                        <ul class="list-disc ml-4 mt-1">
+                            <li>Setel <b>Margins</b> ke <b>None</b>.</li>
+                            <li>Matikan <b>Headers and Footers</b>.</li>
+                            <li>Gunakan Shortcut Chrome: Tambahkan <code class="bg-yellow-200 px-1">--kiosk-printing</code> di target shortcut aplikasi browser Anda agar dialog print otomatis terlewati.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Bagian Preview Nota -->
         <div class="flex flex-col items-center">
-            <h2 class="text-lg font-semibold mb-4 no-print text-gray-700">Sawangan (Preview 58mm)</h2>
+            <h2 class="text-lg font-semibold mb-4 no-print text-gray-700">Sawangan (58mm)</h2>
             
             <div id="printArea" class="receipt-preview font-receipt text-[10px]">
                 <!-- Header -->
@@ -142,24 +152,24 @@
 
                 <!-- Info Nota -->
                 <div class="grid grid-cols-1 gap-0">
-                    <div class="flex justify-between">
-                        <span>NO. NOTA</span>
-                        <span id="dispNotaNo">: REG.20260501.001</span>
+                    <div class="flex">
+                        <span class="w-20">NO. NOTA</span>
+                        <span id="dispNotaNo">: REG.20260501.145343.01</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span>TANGGAL</span>
+                    <div class="flex">
+                        <span class="w-20">TANGGAL</span>
                         <span id="dispTanggal">: 01/05/2026</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span>JAM</span>
+                    <div class="flex">
+                        <span class="w-20">JAM</span>
                         <span id="dispJam">: 10:49:51</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span>KASIR</span>
+                    <div class="flex">
+                        <span class="w-20">KASIR</span>
                         <span id="dispKasir">: SODRI</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span>NAMA</span>
+                    <div class="flex">
+                        <span class="w-20">NAMA</span>
                         <span>: UMUM</span>
                     </div>
                 </div>
@@ -168,9 +178,7 @@
                 <div class="font-bold mb-1">DETAIL BARANG :</div>
 
                 <!-- Barang List -->
-                <div id="dispItemsList">
-                    <!-- Dinamis via JS -->
-                </div>
+                <div id="dispItemsList"></div>
 
                 <div class="line-dash"></div>
 
@@ -202,7 +210,6 @@
     </div>
 
     <script>
-        // Fungsi Update Realtime
         function updateReceipt() {
             document.getElementById('dispStoreName').innerText = document.getElementById('storeName').value;
             document.getElementById('dispStoreAddress').innerText = document.getElementById('storeAddress').value;
@@ -210,7 +217,6 @@
             document.getElementById('dispNotaNo').innerText = ": " + document.getElementById('notaNo').value;
             document.getElementById('dispKasir').innerText = ": " + document.getElementById('kasirName').value;
 
-            // Update Items
             const items = document.querySelectorAll('.item-row');
             const listContainer = document.getElementById('dispItemsList');
             listContainer.innerHTML = '';
@@ -228,7 +234,7 @@
                 itemDiv.innerHTML = `
                     <div class="font-bold">${name}</div>
                     <div class="flex justify-between">
-                        <span>${qty} PCS  RP. ${price.toLocaleString('id-ID')}</span>
+                        <span>${qty} PCS &nbsp; RP. ${price.toLocaleString('id-ID')}</span>
                         <span>${subtotal.toLocaleString('id-ID')}</span>
                     </div>
                 `;
@@ -238,7 +244,6 @@
             document.getElementById('dispTotal').innerText = "RP. " + total.toLocaleString('id-ID');
             document.getElementById('dispTotalHarga').innerText = "RP. " + total.toLocaleString('id-ID');
 
-            // Update Jam & Tanggal
             const skrg = new Date();
             document.getElementById('dispTanggal').innerText = ": " + skrg.toLocaleDateString('id-ID');
             document.getElementById('dispJam').innerText = ": " + skrg.toLocaleTimeString('id-ID');
@@ -247,7 +252,7 @@
         function addItem() {
             const container = document.getElementById('itemsContainer');
             const newRow = document.createElement('div');
-            newRow.className = 'flex gap-2 items-end item-row';
+            newRow.className = 'flex gap-2 items-end item-row pt-2 border-t border-gray-100';
             newRow.innerHTML = `
                 <div class="flex-1">
                     <input type="text" class="itemName w-full p-2 border rounded text-sm" value="BARANG BARU">
@@ -260,19 +265,21 @@
                 </div>
             `;
             container.appendChild(newRow);
-            
-            // Re-attach listeners
             attachListeners();
             updateReceipt();
         }
 
+        function handlePrint() {
+            updateReceipt();
+            window.print();
+        }
+
         function attachListeners() {
             document.querySelectorAll('input, textarea').forEach(el => {
-                el.addEventListener('input', updateReceipt);
+                el.oninput = updateReceipt;
             });
         }
 
-        // Initial Load
         window.onload = () => {
             attachListeners();
             updateReceipt();
