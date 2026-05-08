@@ -14,93 +14,131 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        /* Style untuk input yang bisa diedit */
+        .editable-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+        .editable-input:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-bottom-color: white;
+            outline: none;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto">
-        <!-- Header -->
+    <div class="max-w-6xl mx-auto">
+        <!-- Header & Settings -->
         <div class="bg-blue-600 text-white p-6 rounded-t-2xl shadow-lg">
-            <div class="flex justify-between items-start">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold">Proyek 500 Lembar A1</h1>
-                    <p class="opacity-90">Total Stok: 11 Roll (±605 lbr) | Penyimpanan Lokal Aktif</p>
+                    <h1 class="text-2xl font-bold">Proyek Cetak A1</h1>
+                    <p class="opacity-90 text-sm">Database Lokal Aktif | Semua Input Dapat Diubah</p>
                 </div>
-                <div class="bg-blue-500 p-2 rounded-lg text-center border border-blue-400">
-                    <span class="text-xs block uppercase font-bold text-blue-100">Status Database</span>
-                    <span class="text-sm font-bold">TERSIMPAN LOKAL</span>
+                <div class="grid grid-cols-3 gap-2 bg-blue-700 p-3 rounded-xl border border-blue-500 w-full md:w-auto">
+                    <div class="text-center">
+                        <label class="text-[9px] font-bold block uppercase opacity-70 mb-1">Target Total</label>
+                        <input type="number" id="mainTargetInput" value="500" onchange="updateMasterData()" class="editable-input text-center font-bold w-full rounded py-1 text-lg">
+                    </div>
+                    <div class="text-center border-x border-blue-500 px-2">
+                        <label class="text-[9px] font-bold block uppercase opacity-70 mb-1">Target Hari Ini</label>
+                        <input type="number" id="dailyTargetInput" value="80" onchange="updateMasterData()" class="editable-input text-center font-bold w-full rounded py-1 text-lg">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-[9px] font-bold block uppercase opacity-70 mb-1">Stok Roll</label>
+                        <input type="number" id="rollStockInput" value="11" onchange="updateMasterData()" class="editable-input text-center font-bold w-full rounded py-1 text-lg">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <!-- Kolom Kiri: Timer & Input -->
-            <div class="lg:col-span-1 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            <!-- Kolom Kiri: Timer & Input (4/12) -->
+            <div class="lg:col-span-4 space-y-6">
                 <!-- Stopwatch -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                     <h2 class="text-gray-500 font-semibold mb-2 uppercase text-xs tracking-wider">Stopwatch Sesi</h2>
                     <div id="display" class="text-5xl font-bold timer-font text-blue-600 mb-4 tracking-tighter text-center">00:00:00</div>
                     <div class="flex gap-2">
-                        <button onclick="startTimer()" id="startBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all">MULAI</button>
-                        <button onclick="pauseTimer()" id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all" disabled>JEDA</button>
+                        <button onclick="startTimer()" id="startBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all shadow-md">MULAI</button>
+                        <button onclick="pauseTimer()" id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all shadow-md" disabled>JEDA</button>
                     </div>
                 </div>
 
                 <!-- Input Sesi Manual -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="text-gray-500 font-semibold mb-4 uppercase text-xs tracking-wider">Input Sesi Kerja</h2>
-                    <div class="space-y-3">
-                        <div>
+                    <h2 class="text-gray-500 font-semibold mb-4 uppercase text-xs tracking-wider flex items-center">
+                        <span class="mr-2">📝</span> Input Sesi Kerja
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="col-span-1">
                             <label class="text-[10px] font-bold text-gray-400 block mb-1">JAM MULAI</label>
                             <input type="time" id="startTimeInput" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
                         </div>
-                        <div>
+                        <div class="col-span-1">
                             <label class="text-[10px] font-bold text-gray-400 block mb-1">JAM SELESAI</label>
                             <input type="time" id="endTimeInput" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
                         </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-400 block mb-1">JUMLAH LEMBAR</label>
-                            <input type="number" id="sessionCountInput" placeholder="Misal: 20" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
-                        </div>
-                        <button onclick="saveSession()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 transition-all">SIMPAN KE DATABASE</button>
                     </div>
+                    <div class="mb-4">
+                        <label class="text-[10px] font-bold text-gray-400 block mb-1">JUMLAH LEMBAR YANG DIKERJAKAN</label>
+                        <input type="number" id="sessionCountInput" placeholder="Contoh: 30" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 font-bold text-gray-700 text-xl">
+                    </div>
+                    <button onclick="saveSession()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-100 transition-all">SIMPAN KE DATABASE</button>
                 </div>
             </div>
 
-            <!-- Kolom Kanan: Progres & Database -->
-            <div class="lg:col-span-2 space-y-6">
+            <!-- Kolom Kanan: Progres & Database (8/12) -->
+            <div class="lg:col-span-8 space-y-6">
                 <!-- Stats Row -->
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
-                        <span class="text-gray-400 text-xs block uppercase font-bold">Total Selesai</span>
-                        <span id="totalDoneDisplay" class="text-2xl font-bold text-gray-800">0</span>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center shadow-sm">
+                        <span class="text-gray-400 text-[10px] block uppercase font-bold">Total Selesai</span>
+                        <span id="totalDoneDisplay" class="text-2xl font-bold text-blue-600 leading-tight">0</span>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
-                        <span class="text-gray-400 text-xs block uppercase font-bold">Sisa Target</span>
-                        <span id="remainingDisplay" class="text-2xl font-bold text-orange-600">500</span>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center shadow-sm">
+                        <span class="text-gray-400 text-[10px] block uppercase font-bold">Sisa Target Total</span>
+                        <span id="remainingTotalDisplay" class="text-2xl font-bold text-gray-800 leading-tight">0</span>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center col-span-2 md:col-span-1">
-                        <span class="text-gray-400 text-xs block uppercase font-bold">Estimasi Sisa Kertas</span>
-                        <span id="estSisa" class="text-2xl font-bold text-green-600">605 lbr</span>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center shadow-sm">
+                        <span class="text-gray-400 text-[10px] block uppercase font-bold">Sisa Target Harian</span>
+                        <span id="remainingDailyDisplay" class="text-2xl font-bold text-orange-600 leading-tight">0</span>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center shadow-sm">
+                        <span class="text-gray-400 text-[10px] block uppercase font-bold">Est. Sisa Kertas</span>
+                        <span id="estSisa" class="text-2xl font-bold text-green-600 leading-tight">0</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar Harian -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-end mb-2">
+                        <h2 class="text-gray-500 font-semibold uppercase text-xs tracking-wider font-bold">Progres Target Hari Ini</h2>
+                        <span id="dailyPercent" class="text-blue-600 font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                        <div id="dailyProgressBar" class="bg-blue-600 h-full transition-all duration-700" style="width: 0%"></div>
                     </div>
                 </div>
 
                 <!-- Database / History Table -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-gray-800 font-bold uppercase text-sm tracking-wider">Riwayat Pekerjaan (Database)</h2>
+                        <h2 class="text-gray-800 font-bold uppercase text-sm tracking-wider">Riwayat Pekerjaan</h2>
                         <button onclick="clearDatabase()" class="text-red-500 text-xs font-bold hover:underline">Hapus Semua Data</button>
                     </div>
-                    <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-gray-400 uppercase bg-gray-50 sticky top-0">
+                    <div class="overflow-y-auto max-h-[350px] custom-scrollbar border rounded-lg text-xs md:text-sm">
+                        <table class="w-full text-left">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-50 sticky top-0 border-b">
                                 <tr>
-                                    <th class="px-4 py-2">Tanggal</th>
-                                    <th class="px-4 py-2">Waktu</th>
-                                    <th class="px-4 py-2">Lembar</th>
-                                    <th class="px-4 py-2 text-right">Aksi</th>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Jam Kerja</th>
+                                    <th class="px-4 py-3">Lembar</th>
+                                    <th class="px-4 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="historyTableBody" class="divide-y divide-gray-50">
+                            <tbody id="historyTableBody" class="divide-y divide-gray-100">
                                 <!-- Data akan muncul di sini -->
                             </tbody>
                         </table>
@@ -111,21 +149,39 @@
     </div>
 
     <script>
-        // Database Logic (LocalStorage)
+        // Data Global & Database
         let workSessions = JSON.parse(localStorage.getItem('percetakan_db')) || [];
-        const totalKapasitas = 605;
-        const mainTarget = 500;
+        let config = JSON.parse(localStorage.getItem('percetakan_config')) || {
+            mainTarget: 500,
+            dailyTarget: 80,
+            rollStock: 11
+        };
 
         // Initialize UI
         document.addEventListener('DOMContentLoaded', () => {
+            // Load config to inputs
+            document.getElementById('mainTargetInput').value = config.mainTarget;
+            document.getElementById('dailyTargetInput').value = config.dailyTarget;
+            document.getElementById('rollStockInput').value = config.rollStock;
             renderHistory();
         });
+
+        function updateMasterData() {
+            config.mainTarget = parseInt(document.getElementById('mainTargetInput').value) || 0;
+            config.dailyTarget = parseInt(document.getElementById('dailyTargetInput').value) || 0;
+            config.rollStock = parseInt(document.getElementById('rollStockInput').value) || 0;
+            
+            localStorage.setItem('percetakan_config', JSON.stringify(config));
+            renderHistory();
+        }
 
         function saveSession() {
             const start = document.getElementById('startTimeInput').value;
             const end = document.getElementById('endTimeInput').value;
             const count = parseInt(document.getElementById('sessionCountInput').value);
-            const date = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+            const dateId = today.toISOString().split('T')[0]; 
 
             if (!start || !end || !count) {
                 alert("Mohon isi semua data sesi!");
@@ -134,13 +190,14 @@
 
             const newSession = {
                 id: Date.now(),
-                date: date,
+                dateId: dateId,
+                dateDisplay: dateStr,
                 startTime: start,
                 endTime: end,
                 count: count
             };
 
-            workSessions.unshift(newSession); // Tambah ke atas
+            workSessions.unshift(newSession);
             localStorage.setItem('percetakan_db', JSON.stringify(workSessions));
             
             // Reset Input
@@ -149,13 +206,15 @@
         }
 
         function deleteSession(id) {
-            workSessions = workSessions.filter(s => s.id !== id);
-            localStorage.setItem('percetakan_db', JSON.stringify(workSessions));
-            renderHistory();
+            if(confirm("Hapus data ini dari riwayat?")) {
+                workSessions = workSessions.filter(s => s.id !== id);
+                localStorage.setItem('percetakan_db', JSON.stringify(workSessions));
+                renderHistory();
+            }
         }
 
         function clearDatabase() {
-            if(confirm("Apakah Anda yakin ingin menghapus semua riwayat pekerjaan?")) {
+            if(confirm("Apakah Anda yakin ingin menghapus SEMUA riwayat pekerjaan?")) {
                 workSessions = [];
                 localStorage.removeItem('percetakan_db');
                 renderHistory();
@@ -167,17 +226,23 @@
             tableBody.innerHTML = '';
             
             let totalDone = 0;
+            let dailyDone = 0;
+            const todayId = new Date().toISOString().split('T')[0];
 
             workSessions.forEach(session => {
                 totalDone += session.count;
+                if (session.dateId === todayId) {
+                    dailyDone += session.count;
+                }
+
                 const row = `
                     <tr class="hover:bg-blue-50 transition-colors">
-                        <td class="px-4 py-4 font-medium text-gray-700">${session.date}</td>
+                        <td class="px-4 py-4 font-medium text-gray-700">${session.dateDisplay}</td>
                         <td class="px-4 py-4 text-gray-500">${session.startTime} - ${session.endTime}</td>
                         <td class="px-4 py-4 font-bold text-blue-600">${session.count} lbr</td>
                         <td class="px-4 py-4 text-right">
-                            <button onclick="deleteSession(${session.id})" class="text-red-400 hover:text-red-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button onclick="deleteSession(${session.id})" class="text-red-400 hover:text-red-600 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
@@ -187,10 +252,19 @@
                 tableBody.insertAdjacentHTML('beforeend', row);
             });
 
-            // Update Stats
+            // Update Stats Display
             document.getElementById('totalDoneDisplay').innerText = totalDone;
-            document.getElementById('remainingDisplay').innerText = Math.max(0, mainTarget - totalDone);
-            document.getElementById('estSisa').innerText = (totalKapasitas - totalDone) + ' lbr';
+            document.getElementById('remainingTotalDisplay').innerText = Math.max(0, config.mainTarget - totalDone);
+            document.getElementById('remainingDailyDisplay').innerText = Math.max(0, config.dailyTarget - dailyDone);
+            
+            // Estimasi sisa kertas (asumsi 1 roll = 55 lembar A1)
+            const totalKapasitas = config.rollStock * 55;
+            document.getElementById('estSisa').innerText = Math.max(0, totalKapasitas - totalDone) + ' lbr';
+
+            // Progress Bar Harian
+            const dailyPercent = config.dailyTarget > 0 ? Math.min(100, (dailyDone / config.dailyTarget) * 100) : 0;
+            document.getElementById('dailyProgressBar').style.width = dailyPercent + '%';
+            document.getElementById('dailyPercent').innerText = Math.floor(dailyPercent) + '%';
         }
 
         // Stopwatch Logic
