@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontrol Produksi 500 Lembar A1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .timer-font { font-family: monospace; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-6 rounded-t-2xl shadow-lg">
+            <h1 class="text-2xl font-bold">Proyek 500 Lembar A1 (Tabel Hitam)</h1>
+            <p class="opacity-90">Target Harian: 80 Lembar | Target Total: 500 Lembar</p>
+        </div>
+
+        <!-- Timer & Counter Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <!-- Stopwatch -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-gray-500 font-semibold mb-2">STOPWATCH SESI (Max 2 Jam)</h2>
+                <div id="display" class="text-5xl font-bold timer-font text-blue-600 mb-4">00:00:00</div>
+                <div class="flex gap-2">
+                    <button onclick="startTimer()" id="startBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold flex-1">MULAI</button>
+                    <button onclick="pauseTimer()" id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold flex-1" disabled>JEDA</button>
+                    <button onclick="resetTimer()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">RESET</button>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">*Istirahatkan mesin jika sudah jalan 2 jam nonstop.</p>
+            </div>
+
+            <!-- Counter -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-gray-500 font-semibold mb-2">PENGHITUNG LEMBAR (HARI INI)</h2>
+                <div class="flex items-center justify-between">
+                    <button onclick="updateCounter(-1)" class="bg-gray-200 text-2xl w-12 h-12 rounded-full font-bold">-</button>
+                    <div class="text-center">
+                        <span id="counter" class="text-6xl font-bold text-gray-800">0</span>
+                        <span class="text-gray-400 block">/ 80 Lembar</span>
+                    </div>
+                    <button onclick="updateCounter(1)" class="bg-blue-600 text-white text-2xl w-12 h-12 rounded-full font-bold">+</button>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-6">
+                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jadwal Tempur -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mt-4">
+            <h2 class="font-bold text-gray-800 mb-4 flex items-center">
+                <span class="mr-2">📅</span> Jadwal Kerja Aman (Suhu 26°C - 35°C)
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2">Waktu</th>
+                            <th class="px-4 py-2">Kegiatan</th>
+                            <th class="px-4 py-2">Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="px-4 py-3">09:00 - 11:30</td>
+                            <td class="px-4 py-3 font-semibold text-green-600 text-xs md:text-sm">Sesi Pagi (Adem)</td>
+                            <td class="px-4 py-3">30 Lembar</td>
+                        </tr>
+                        <tr class="border-b bg-yellow-50">
+                            <td class="px-4 py-3">11:30 - 13:00</td>
+                            <td class="px-4 py-3 text-xs md:text-sm">Istirahat Mesin & Dzuhur</td>
+                            <td class="px-4 py-3">-</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-4 py-3">13:00 - 15:30</td>
+                            <td class="px-4 py-3 font-semibold text-orange-600 text-xs md:text-sm">Sesi Siang (Panas)</td>
+                            <td class="px-4 py-3">30 Lembar</td>
+                        </tr>
+                        <tr class="border-b bg-yellow-50">
+                            <td class="px-4 py-3">15:30 - 16:30</td>
+                            <td class="px-4 py-3 text-xs md:text-sm">Istirahat Mesin & Ashar</td>
+                            <td class="px-4 py-3">-</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-4 py-3">16:30 - 18:30</td>
+                            <td class="px-4 py-3 font-semibold text-blue-600 text-xs md:text-sm">Sesi Sore (Finishing)</td>
+                            <td class="px-4 py-3">20 Lembar</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Catatan Penting -->
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mt-4 rounded-r-xl">
+            <h3 class="text-red-800 font-bold">⚠️ Pengingat Suhu 35°C:</h3>
+            <ul class="list-disc ml-5 text-sm text-red-700">
+                <li>Cek Nozzle setiap 15 lembar.</li>
+                <li>Lap debu kertas HVS di wiper/capping station setiap istirahat.</li>
+                <li>Pastikan kipas angin tidak meniup ke area printhead.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Stopwatch Logic
+        let startTime, elapsedTime = 0, timerInterval;
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        function timeToString(time) {
+            let diffInHrs = time / 3600000;
+            let hh = Math.floor(diffInHrs);
+            let diffInMin = (diffInHrs - hh) * 60;
+            let mm = Math.floor(diffInMin);
+            let diffInSec = (diffInMin - mm) * 60;
+            let ss = Math.floor(diffInSec);
+            return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}:${ss.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            startTime = Date.now() - elapsedTime;
+            timerInterval = setInterval(() => {
+                elapsedTime = Date.now() - startTime;
+                display.innerHTML = timeToString(elapsedTime);
+            }, 1000);
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            display.innerHTML = "00:00:00";
+            elapsedTime = 0;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        // Counter Logic
+        let count = 0;
+        const target = 80;
+        function updateCounter(val) {
+            count = Math.max(0, count + val);
+            document.getElementById('counter').innerText = count;
+            let progress = (count / target) * 100;
+            document.getElementById('progressBar').style.width = Math.min(100, progress) + '%';
+        }
+    </script>
+</body>
+</html>
