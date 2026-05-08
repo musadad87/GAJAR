@@ -9,104 +9,190 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .timer-font { font-family: monospace; }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto">
         <!-- Header -->
         <div class="bg-blue-600 text-white p-6 rounded-t-2xl shadow-lg">
-            <h1 class="text-2xl font-bold">Proyek 500 Lembar A1 (Tabel Hitam)</h1>
-            <p class="opacity-90">Target Harian: 80 Lembar | Target Total: 500 Lembar</p>
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold">Proyek 500 Lembar A1</h1>
+                    <p class="opacity-90">Total Stok: 11 Roll (±605 lbr) | Penyimpanan Lokal Aktif</p>
+                </div>
+                <div class="bg-blue-500 p-2 rounded-lg text-center border border-blue-400">
+                    <span class="text-xs block uppercase font-bold text-blue-100">Status Database</span>
+                    <span class="text-sm font-bold">TERSIMPAN LOKAL</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Timer & Counter Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <!-- Stopwatch -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h2 class="text-gray-500 font-semibold mb-2">STOPWATCH SESI (Max 2 Jam)</h2>
-                <div id="display" class="text-5xl font-bold timer-font text-blue-600 mb-4">00:00:00</div>
-                <div class="flex gap-2">
-                    <button onclick="startTimer()" id="startBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold flex-1">MULAI</button>
-                    <button onclick="pauseTimer()" id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold flex-1" disabled>JEDA</button>
-                    <button onclick="resetTimer()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">RESET</button>
-                </div>
-                <p class="text-xs text-gray-400 mt-3">*Istirahatkan mesin jika sudah jalan 2 jam nonstop.</p>
-            </div>
-
-            <!-- Counter -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h2 class="text-gray-500 font-semibold mb-2">PENGHITUNG LEMBAR (HARI INI)</h2>
-                <div class="flex items-center justify-between">
-                    <button onclick="updateCounter(-1)" class="bg-gray-200 text-2xl w-12 h-12 rounded-full font-bold">-</button>
-                    <div class="text-center">
-                        <span id="counter" class="text-6xl font-bold text-gray-800">0</span>
-                        <span class="text-gray-400 block">/ 80 Lembar</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <!-- Kolom Kiri: Timer & Input -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Stopwatch -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="text-gray-500 font-semibold mb-2 uppercase text-xs tracking-wider">Stopwatch Sesi</h2>
+                    <div id="display" class="text-5xl font-bold timer-font text-blue-600 mb-4 tracking-tighter text-center">00:00:00</div>
+                    <div class="flex gap-2">
+                        <button onclick="startTimer()" id="startBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all">MULAI</button>
+                        <button onclick="pauseTimer()" id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-xl font-bold flex-1 transition-all" disabled>JEDA</button>
                     </div>
-                    <button onclick="updateCounter(1)" class="bg-blue-600 text-white text-2xl w-12 h-12 rounded-full font-bold">+</button>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-6">
-                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+
+                <!-- Input Sesi Manual -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="text-gray-500 font-semibold mb-4 uppercase text-xs tracking-wider">Input Sesi Kerja</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 block mb-1">JAM MULAI</label>
+                            <input type="time" id="startTimeInput" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 block mb-1">JAM SELESAI</label>
+                            <input type="time" id="endTimeInput" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 block mb-1">JUMLAH LEMBAR</label>
+                            <input type="number" id="sessionCountInput" placeholder="Misal: 20" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-700">
+                        </div>
+                        <button onclick="saveSession()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 transition-all">SIMPAN KE DATABASE</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Jadwal Tempur -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mt-4">
-            <h2 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="mr-2">📅</span> Jadwal Kerja Aman (Suhu 26°C - 35°C)
-            </h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2">Waktu</th>
-                            <th class="px-4 py-2">Kegiatan</th>
-                            <th class="px-4 py-2">Target</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b">
-                            <td class="px-4 py-3">09:00 - 11:30</td>
-                            <td class="px-4 py-3 font-semibold text-green-600 text-xs md:text-sm">Sesi Pagi (Adem)</td>
-                            <td class="px-4 py-3">30 Lembar</td>
-                        </tr>
-                        <tr class="border-b bg-yellow-50">
-                            <td class="px-4 py-3">11:30 - 13:00</td>
-                            <td class="px-4 py-3 text-xs md:text-sm">Istirahat Mesin & Dzuhur</td>
-                            <td class="px-4 py-3">-</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="px-4 py-3">13:00 - 15:30</td>
-                            <td class="px-4 py-3 font-semibold text-orange-600 text-xs md:text-sm">Sesi Siang (Panas)</td>
-                            <td class="px-4 py-3">30 Lembar</td>
-                        </tr>
-                        <tr class="border-b bg-yellow-50">
-                            <td class="px-4 py-3">15:30 - 16:30</td>
-                            <td class="px-4 py-3 text-xs md:text-sm">Istirahat Mesin & Ashar</td>
-                            <td class="px-4 py-3">-</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="px-4 py-3">16:30 - 18:30</td>
-                            <td class="px-4 py-3 font-semibold text-blue-600 text-xs md:text-sm">Sesi Sore (Finishing)</td>
-                            <td class="px-4 py-3">20 Lembar</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Kolom Kanan: Progres & Database -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
+                        <span class="text-gray-400 text-xs block uppercase font-bold">Total Selesai</span>
+                        <span id="totalDoneDisplay" class="text-2xl font-bold text-gray-800">0</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
+                        <span class="text-gray-400 text-xs block uppercase font-bold">Sisa Target</span>
+                        <span id="remainingDisplay" class="text-2xl font-bold text-orange-600">500</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center col-span-2 md:col-span-1">
+                        <span class="text-gray-400 text-xs block uppercase font-bold">Estimasi Sisa Kertas</span>
+                        <span id="estSisa" class="text-2xl font-bold text-green-600">605 lbr</span>
+                    </div>
+                </div>
+
+                <!-- Database / History Table -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-800 font-bold uppercase text-sm tracking-wider">Riwayat Pekerjaan (Database)</h2>
+                        <button onclick="clearDatabase()" class="text-red-500 text-xs font-bold hover:underline">Hapus Semua Data</button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2">Tanggal</th>
+                                    <th class="px-4 py-2">Waktu</th>
+                                    <th class="px-4 py-2">Lembar</th>
+                                    <th class="px-4 py-2 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="divide-y divide-gray-50">
+                                <!-- Data akan muncul di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Catatan Penting -->
-        <div class="bg-red-50 border-l-4 border-red-500 p-4 mt-4 rounded-r-xl">
-            <h3 class="text-red-800 font-bold">⚠️ Pengingat Suhu 35°C:</h3>
-            <ul class="list-disc ml-5 text-sm text-red-700">
-                <li>Cek Nozzle setiap 15 lembar.</li>
-                <li>Lap debu kertas HVS di wiper/capping station setiap istirahat.</li>
-                <li>Pastikan kipas angin tidak meniup ke area printhead.</li>
-            </ul>
         </div>
     </div>
 
     <script>
+        // Database Logic (LocalStorage)
+        let workSessions = JSON.parse(localStorage.getItem('percetakan_db')) || [];
+        const totalKapasitas = 605;
+        const mainTarget = 500;
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+        });
+
+        function saveSession() {
+            const start = document.getElementById('startTimeInput').value;
+            const end = document.getElementById('endTimeInput').value;
+            const count = parseInt(document.getElementById('sessionCountInput').value);
+            const date = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+
+            if (!start || !end || !count) {
+                alert("Mohon isi semua data sesi!");
+                return;
+            }
+
+            const newSession = {
+                id: Date.now(),
+                date: date,
+                startTime: start,
+                endTime: end,
+                count: count
+            };
+
+            workSessions.unshift(newSession); // Tambah ke atas
+            localStorage.setItem('percetakan_db', JSON.stringify(workSessions));
+            
+            // Reset Input
+            document.getElementById('sessionCountInput').value = '';
+            renderHistory();
+        }
+
+        function deleteSession(id) {
+            workSessions = workSessions.filter(s => s.id !== id);
+            localStorage.setItem('percetakan_db', JSON.stringify(workSessions));
+            renderHistory();
+        }
+
+        function clearDatabase() {
+            if(confirm("Apakah Anda yakin ingin menghapus semua riwayat pekerjaan?")) {
+                workSessions = [];
+                localStorage.removeItem('percetakan_db');
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const tableBody = document.getElementById('historyTableBody');
+            tableBody.innerHTML = '';
+            
+            let totalDone = 0;
+
+            workSessions.forEach(session => {
+                totalDone += session.count;
+                const row = `
+                    <tr class="hover:bg-blue-50 transition-colors">
+                        <td class="px-4 py-4 font-medium text-gray-700">${session.date}</td>
+                        <td class="px-4 py-4 text-gray-500">${session.startTime} - ${session.endTime}</td>
+                        <td class="px-4 py-4 font-bold text-blue-600">${session.count} lbr</td>
+                        <td class="px-4 py-4 text-right">
+                            <button onclick="deleteSession(${session.id})" class="text-red-400 hover:text-red-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Update Stats
+            document.getElementById('totalDoneDisplay').innerText = totalDone;
+            document.getElementById('remainingDisplay').innerText = Math.max(0, mainTarget - totalDone);
+            document.getElementById('estSisa').innerText = (totalKapasitas - totalDone) + ' lbr';
+        }
+
         // Stopwatch Logic
         let startTime, elapsedTime = 0, timerInterval;
         const display = document.getElementById('display');
@@ -128,6 +214,7 @@
             timerInterval = setInterval(() => {
                 elapsedTime = Date.now() - startTime;
                 display.innerHTML = timeToString(elapsedTime);
+                if (elapsedTime > 7200000) display.classList.add('text-red-600');
             }, 1000);
             startBtn.disabled = true;
             pauseBtn.disabled = false;
@@ -142,19 +229,10 @@
         function resetTimer() {
             clearInterval(timerInterval);
             display.innerHTML = "00:00:00";
+            display.classList.remove('text-red-600');
             elapsedTime = 0;
             startBtn.disabled = false;
             pauseBtn.disabled = true;
-        }
-
-        // Counter Logic
-        let count = 0;
-        const target = 80;
-        function updateCounter(val) {
-            count = Math.max(0, count + val);
-            document.getElementById('counter').innerText = count;
-            let progress = (count / target) * 100;
-            document.getElementById('progressBar').style.width = Math.min(100, progress) + '%';
         }
     </script>
 </body>
