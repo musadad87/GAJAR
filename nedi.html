@@ -238,27 +238,31 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* Constants & Config */
     const LOCAL_KEY = "llm_barang_kosong_v1";
     const DAY = 24 * 60 * 60 * 1000;
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
-      authDomain: "nedi-4cb8d.firebaseapp.com",
-      projectId: "nedi-4cb8d",
-      storageBucket: "nedi-4cb8d.firebasestorage.app",
-      messagingSenderId: "594252750745",
-      appId: "1:594252750745:web:d4fc11854d1aaaa1093d08",
-      measurementId: "G-GY97JTDE3Y"
-    };
+    // Deteksi appId & Config dari Environment
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'lancar-langgeng-motor';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' 
+      ? JSON.parse(__firebase_config) 
+      : {
+          apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
+          authDomain: "nedi-4cb8d.firebaseapp.com",
+          projectId: "nedi-4cb8d",
+          storageBucket: "nedi-4cb8d.firebasestorage.app",
+          messagingSenderId: "594252750745",
+          appId: "1:594252750745:web:d4fc11854d1aaaa1093d08",
+          measurementId: "G-GY97JTDE3Y"
+        };
 
     /* Global State */
     let db = null;
     let auth = null;
-    let ordersRef = null;
+    // Jalur koleksi Firestore publik sesuai aturan lingkungan aplikasi
+    const ordersCollectionPath = ['artifacts', appId, 'public', 'data', 'orders'];
     let ordersData = [];
     let currentTab = 'kosong'; // 'kosong', 'order', 'selesai'
     let currentRole = 'mekanik'; // 'mekanik', 'bos'
@@ -561,15 +565,17 @@
         tanggal: new Date().toLocaleDateString('id-ID')
       };
 
-      if (!isLocalStorageMode && ordersRef) {
+      if (!isLocalStorageMode && db) {
         try {
-          await addDoc(ordersRef, newItem);
+          const colRef = collection(db, ...ordersCollectionPath);
+          await addDoc(colRef, newItem);
           window.showToast('Barang kosong berhasil dicatat!');
         } catch(err) {
+          console.error("Error Add Doc:", err);
           newItem.id = 'loc-' + Date.now();
           ordersData.unshift(newItem);
           saveToLocalStorage();
-          window.showToast('Tersimpan di storage lokal');
+          window.showToast('Tersimpan di storage lokal (Offline)');
         }
       } else {
         newItem.id = 'loc-' + Date.now();
@@ -590,7 +596,8 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          await updateDoc(doc(db, 'orders', id), updateData);
+          const docRef = doc(db, ...ordersCollectionPath, id);
+          await updateDoc(docRef, updateData);
           window.showToast('Barang dipindahkan ke Di-order!');
         } catch(err) {
           updateLocalItem(id, updateData);
@@ -606,7 +613,8 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          await updateDoc(doc(db, 'orders', id), updateData);
+          const docRef = doc(db, ...ordersCollectionPath, id);
+          await updateDoc(docRef, updateData);
           window.showToast('Barang sudah tiba di Bengkel!');
         } catch(err) {
           updateLocalItem(id, updateData);
@@ -634,7 +642,8 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          await updateDoc(doc(db, 'orders', id), updateData);
+          const docRef = doc(db, ...ordersCollectionPath, id);
+          await updateDoc(docRef, updateData);
           window.showToast('Status berhasil diupdate!');
         } catch(err) {
           updateLocalItem(id, updateData);
@@ -661,7 +670,8 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          await deleteDoc(doc(db, 'orders', targetDeleteId));
+          const docRef = doc(db, ...ordersCollectionPath, targetDeleteId);
+          await deleteDoc(docRef);
           window.showToast('Data berhasil dihapus');
         } catch(err) {
           ordersData = ordersData.filter(o => o.id !== targetDeleteId);
@@ -687,11 +697,17 @@
         db = getFirestore(app);
         auth = getAuth(app);
 
-        try { await signInAnonymously(auth); } catch(e) {}
+        // Autentikasi sebelum membaca/menulis ke database
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
 
-        ordersRef = collection(db, 'orders');
+        const colRef = collection(db, ...ordersCollectionPath);
 
-        onSnapshot(ordersRef, (snapshot) => {
+        // Realtime Listener
+        onSnapshot(colRef, (snapshot) => {
           isLocalStorageMode = false;
           ordersData = [];
           snapshot.forEach((docSnap) => {
@@ -700,12 +716,14 @@
           updateSyncBadge('online', 'Cloud Online');
           window.filterData();
         }, (error) => {
+          console.warn("Firestore listener error, switching to LocalStorage fallback:", error);
           isLocalStorageMode = true;
           updateSyncBadge('local', 'Offline (Storage Lokal)');
           loadFromLocalStorage();
         });
 
       } catch (err) {
+        console.warn("Firebase initialization error:", err);
         isLocalStorageMode = true;
         updateSyncBadge('local', 'Offline (Storage Lokal)');
         loadFromLocalStorage();
