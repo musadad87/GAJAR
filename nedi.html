@@ -7,10 +7,11 @@
   <meta name="description" content="Catatan Barang Kosong - Lancar Langgeng Motor">
   <title>Catatan Barang Kosong - Lancar Langgeng Motor</title>
   
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome Icons -->
+  <!-- Font Awesome Icons CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
@@ -19,7 +20,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-16 antialiased selection:bg-blue-500 selection:text-white">
 
-  <!-- Navigation Header -->
   <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-30 shadow-lg">
     <div class="max-w-4xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
@@ -31,15 +31,15 @@
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-xs font-semibold text-blue-400">Lancar Langgeng Motor</span>
             <span class="text-slate-600">•</span>
-            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-              Menghubungkan...
+              Menghubungkan Cloud...
             </span>
           </div>
         </div>
       </div>
 
-      <!-- Role Switcher -->
+      <!-- Mode Role Switcher -->
       <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/80 text-xs">
         <button id="btnRoleMekanik" onclick="window.setRole('mekanik')" class="px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white font-bold shadow">
           <i class="fa-solid fa-user-gear mr-1"></i> Mekanik
@@ -74,32 +74,18 @@
       </button>
     </div>
 
-    <!-- Action Panel & Quick Fill -->
     <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/80 shadow-sm space-y-3.5">
       <div class="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
         <!-- Search Input -->
         <div class="relative flex-1">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari nama barang, motor, atau pemohon..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs md:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari nama barang yang habis..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs md:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
 
-        <div class="flex items-center gap-2">
-          <!-- Filter Kategori -->
-          <select id="filterKategori" onchange="window.filterData()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
-            <option value="semua">Semua Kategori</option>
-            <option value="Oli & Cairan">Oli & Cairan</option>
-            <option value="Kampas & Rem">Kampas & Rem</option>
-            <option value="Ban & Velg">Ban & Velg</option>
-            <option value="Busi & Kelistrikan">Busi & Kelistrikan</option>
-            <option value="Engine & Rantai">Engine & Rantai</option>
-            <option value="Lainnya">Lainnya</option>
-          </select>
-
-          <!-- Add Item Button -->
-          <button onclick="window.bukaModalTambah()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
-            <i class="fa-solid fa-plus text-sm"></i> Tambahkan
-          </button>
-        </div>
+        <!-- Add Button -->
+        <button onclick="window.bukaModalTambah()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-plus text-sm"></i> Tambahkan
+        </button>
       </div>
 
       <!-- Quick Fill Buttons -->
@@ -109,57 +95,55 @@
           <button onclick="window.quickFill('Oli MPX2 0.8L', '10 Botol')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Oli MPX2
           </button>
-          <button onclick="window.quickFill('Kampas Rem Depan', '5 Set')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
+          <button onclick="window.quickFill('Kampas Rem Depan Beat', '5 Set')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Kampas Rem Depan
           </button>
-          <button onclick="window.quickFill('Busi CPR9EA-9', '10 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
+          <button onclick="window.quickFill('Busi NGK CPR9EA-9', '10 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Busi NGK
           </button>
-          <button onclick="window.quickFill('Aki GTZ5S 12V', '3 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
+          <button onclick="window.quickFill('Aki GS GTZ5S', '3 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Aki GS
           </button>
         </div>
       </div>
     </div>
 
-    <!-- List Cards Container -->
     <div id="cardsList" class="space-y-3">
-      <!-- Cards rendered via JavaScript -->
+      <!-- Data cards dynamically loaded here -->
     </div>
 
   </main>
 
-  <!-- Modal Tambah Barang Kosong -->
-  <div id="modalTambah" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalTambah" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-box-archive text-blue-400"></i> Form Catat Barang Kosong
+          <i class="fa-solid fa-box-archive text-blue-400"></i> Catat Barang Kosong
         </h3>
         <button onclick="window.tutupModal('modalTambah')" class="text-slate-400 hover:text-white p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <form id="formTambahOrder" onsubmit="window.prosesTambahOrder(event)" class="space-y-3.5">
+      <form id="formTambahOrder" onsubmit="window.prosesTambahOrder(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Barang *</label>
-          <input type="text" id="inputNama" required placeholder="Contoh: Kampas rem depan" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
+          <input type="text" id="inputNama" required placeholder="Contoh: Kampas rem depan Vario" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Quantity (Jumlah) *</label>
-          <input type="text" id="inputQty" required placeholder="Contoh: 5 Pcs / 1 Box" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
+          <input type="text" id="inputQty" required placeholder="Contoh: 5 Set / 10 Pcs / 2 Box" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
         </div>
 
         <div class="flex items-center gap-2 bg-rose-950/30 p-3 rounded-xl border border-rose-500/30">
-          <input type="checkbox" id="inputUrgent" class="w-4 h-4 rounded text-rose-500 border-slate-700 bg-slate-900 focus:ring-0">
+          <input type="checkbox" id="inputUrgent" class="w-4 h-4 rounded text-rose-500 border-slate-700 bg-slate-900 focus:ring-0 cursor-pointer">
           <label for="inputUrgent" class="text-xs text-rose-300 font-semibold cursor-pointer">
             🚨 Tandai Stok Darurat (Mendesak)
           </label>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-slate-700/60">
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700/60">
           <button type="button" onclick="window.tutupModal('modalTambah')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
             Batal
           </button>
@@ -171,12 +155,11 @@
     </div>
   </div>
 
-  <!-- Modal Update Status Bos -->
-  <div id="modalStatusBos" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalStatusBos" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-user-tie text-blue-400"></i> Update Status Bos
+          <i class="fa-solid fa-user-tie text-amber-400"></i> Update Status Bos
         </h3>
         <button onclick="window.tutupModal('modalStatusBos')" class="text-slate-400 hover:text-white p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -197,14 +180,14 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Pesan dari Bos (Opsional)</label>
-          <textarea id="bosPesan" rows="3" placeholder="Contoh: Sudah diorder via Tokopedia, resi JNE12345. Estimasi besok sore." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none"></textarea>
+          <textarea id="bosPesan" rows="3" placeholder="Contoh: Sudah di-order via Tokopedia. Estimasi sampai besok sore." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none"></textarea>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-slate-700/60">
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700/60">
           <button type="button" onclick="window.tutupModal('modalStatusBos')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
             Batal
           </button>
-          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-md">
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-md">
             Update Status
           </button>
         </div>
@@ -212,15 +195,14 @@
     </div>
   </div>
 
-  <!-- Modal Hapus -->
-  <div id="modalHapus" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalHapus" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center space-y-4">
       <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl">
         <i class="fa-solid fa-trash-can"></i>
       </div>
       <div>
         <h3 class="text-base font-bold text-white">Hapus Catatan Barang?</h3>
-        <p class="text-xs text-slate-400 mt-1">Data akan dihapus secara permanen dari sistem.</p>
+        <p class="text-xs text-slate-400 mt-1">Data akan dihapus secara permanen dari sistem online.</p>
       </div>
       <div class="flex justify-center gap-2 pt-2">
         <button onclick="window.tutupModal('modalHapus')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
@@ -233,7 +215,7 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
+  <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
   <script type="module">
@@ -241,11 +223,11 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    /* Global Constants & Firebase Configuration */
     const LOCAL_KEY = "llm_barang_kosong_v1";
     const DAY = 24 * 60 * 60 * 1000;
 
-    // Deteksi appId & Config dari Environment
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'lancar-langgeng-motor';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'nedi-4cb8d';
     const firebaseConfig = typeof __firebase_config !== 'undefined' 
       ? JSON.parse(__firebase_config) 
       : {
@@ -258,16 +240,20 @@
           measurementId: "G-GY97JTDE3Y"
         };
 
-    /* Global State */
+    /* State Variables */
     let db = null;
     let auth = null;
-    // Jalur koleksi Firestore publik sesuai aturan lingkungan aplikasi
-    const ordersCollectionPath = ['artifacts', appId, 'public', 'data', 'orders'];
     let ordersData = [];
     let currentTab = 'kosong'; // 'kosong', 'order', 'selesai'
     let currentRole = 'mekanik'; // 'mekanik', 'bos'
     let targetDeleteId = null;
     let isLocalStorageMode = false;
+
+    // Detect environment collection path
+    const isCustomArtifactEnv = typeof __app_id !== 'undefined';
+    const ordersCollectionPath = isCustomArtifactEnv 
+      ? ['artifacts', appId, 'public', 'data', 'orders']
+      : ['orders'];
 
     /* Toast Helper */
     window.showToast = function(message, type = 'success') {
@@ -324,14 +310,23 @@
       window.filterData();
     };
 
-    /* Modals Control */
+    /* Reset & Open Form Tambah */
+    window.bukaModalTambah = function() {
+      const namaEl = document.getElementById('inputNama');
+      const qtyEl = document.getElementById('inputQty');
+      const urgentEl = document.getElementById('inputUrgent');
+
+      if (namaEl) namaEl.value = '';
+      if (qtyEl) qtyEl.value = '';
+      if (urgentEl) urgentEl.checked = false;
+
+      window.bukaModal('modalTambah');
+      setTimeout(() => { if (namaEl) namaEl.focus(); }, 100);
+    };
+
     window.bukaModal = function(id) {
       const modal = document.getElementById(id);
       if (modal) modal.classList.remove('hidden');
-    };
-
-    window.bukaModalTambah = function() {
-      window.bukaModal('modalTambah');
     };
 
     window.tutupModal = function(id) {
@@ -342,8 +337,12 @@
     window.quickFill = function(nama, qty) {
       const namaEl = document.getElementById('inputNama');
       const qtyEl = document.getElementById('inputQty');
+      const urgentEl = document.getElementById('inputUrgent');
+
       if (namaEl) namaEl.value = nama;
       if (qtyEl) qtyEl.value = qty;
+      if (urgentEl) urgentEl.checked = false;
+
       window.bukaModal('modalTambah');
     };
 
@@ -362,23 +361,21 @@
       window.bukaModal('modalHapus');
     };
 
-    /* Sync Badge */
     function updateSyncBadge(type, text) {
       const badge = document.getElementById('syncBadge');
       if (!badge) return;
       if (type === 'online') {
-        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
         badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${text}`;
       } else if (type === 'local') {
-        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
         badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${text}`;
       } else {
-        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-700 text-slate-300 border border-slate-600";
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-700 text-slate-300 border border-slate-600";
         badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span> ${text}`;
       }
     }
 
-    /* Fallback Local Storage */
     function loadFromLocalStorage() {
       const stored = localStorage.getItem(LOCAL_KEY);
       if (stored) {
@@ -387,13 +384,10 @@
         ordersData = [
           {
             id: 'sample-1',
-            nama: 'Kampas Rem Depan Beat',
+            nama: 'Kampas Rem Depan Beat Vario',
             qty: '5 Set',
-            kategori: 'Kampas & Rem',
-            motor: 'Honda Beat All Series',
-            pemohon: 'Agus',
-            catatan: 'Habis total di rak depan',
             urgent: true,
+            pemohon: 'Mekanik',
             status: 'kosong',
             createdAt: Date.now(),
             tanggal: new Date().toLocaleDateString('id-ID')
@@ -402,14 +396,11 @@
             id: 'sample-2',
             nama: 'Oli MPX2 0.8L',
             qty: '10 Botol',
-            kategori: 'Oli & Cairan',
-            motor: 'Honda Vario / Beat',
-            pemohon: 'Budi',
-            catatan: 'Laris manis',
             urgent: false,
+            pemohon: 'Mekanik',
             status: 'order',
             orderedAt: Date.now() - (2 * DAY),
-            pesanBos: 'Sudah diorder via supplier, perkiraan besok tiba',
+            pesanBos: 'Sudah diorder via Tokopedia, estimasi besok tiba',
             createdAt: Date.now() - (2 * DAY),
             tanggal: new Date().toLocaleDateString('id-ID')
           }
@@ -424,15 +415,12 @@
       window.filterData();
     }
 
-    /* Escape HTML */
     function esc(s) {
       return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
     }
 
-    /* Filter and Render Data Cards */
     window.filterData = function() {
       const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
-      const katVal = document.getElementById('filterKategori')?.value || 'semua';
 
       let countKosong = 0, countOrder = 0, countSelesai = 0;
       ordersData.forEach(item => {
@@ -450,12 +438,9 @@
         if (itemStatus !== currentTab) return false;
 
         const matchSearch = (item.nama || '').toLowerCase().includes(searchVal) ||
-                            (item.motor || '').toLowerCase().includes(searchVal) ||
                             (item.pemohon || '').toLowerCase().includes(searchVal);
 
-        const matchKat = (katVal === 'semua') || (item.kategori === katVal);
-
-        return matchSearch && matchKat;
+        return matchSearch;
       });
 
       const container = document.getElementById('cardsList');
@@ -465,7 +450,7 @@
         container.innerHTML = `
           <div class="bg-slate-800/60 p-8 rounded-2xl border border-slate-700/60 text-center text-slate-400 space-y-2">
             <i class="fa-solid fa-box-open text-3xl text-slate-500"></i>
-            <p class="text-sm">Belum ada barang di kategori ini.</p>
+            <p class="text-sm font-medium">Belum ada barang di tab ini.</p>
           </div>
         `;
         return;
@@ -483,22 +468,18 @@
             <div class="flex justify-between items-start gap-2">
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700">${esc(item.kategori || 'Sparepart')}</span>
                   ${item.urgent ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse">🚨 STOK DARURAT</span>' : ''}
                 </div>
-                <h3 class="font-bold text-white text-base mt-1.5">${esc(item.nama)}</h3>
+                <h3 class="font-bold text-white text-base mt-1">${esc(item.nama)}</h3>
               </div>
               ${timerBadge}
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50">
-              <div><span class="text-slate-500 block text-[10px]">QUANTITY</span> <strong class="text-amber-400 font-bold">${esc(item.qty || '-')}</strong></div>
-              <div><span class="text-slate-500 block text-[10px]">MOTOR</span> <strong class="text-slate-200">${esc(item.motor || '-')}</strong></div>
-              <div><span class="text-slate-500 block text-[10px]">PEMOHON</span> <strong class="text-slate-200">${esc(item.pemohon || '-')}</strong></div>
+            <div class="grid grid-cols-3 gap-2 text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50">
+              <div><span class="text-slate-500 block text-[10px]">QUANTITY</span> <strong class="text-amber-400 font-bold text-sm">${esc(item.qty || '-')}</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">DICATAT OLEH</span> <strong class="text-slate-200">${esc(item.pemohon || 'Mekanik')}</strong></div>
               <div><span class="text-slate-500 block text-[10px]">TANGGAL</span> <strong class="text-slate-200">${esc(item.tanggal || '-')}</strong></div>
             </div>
-
-            ${item.catatan ? `<p class="text-xs text-amber-200/90 italic bg-amber-950/20 p-2 rounded-lg border border-amber-500/20"><i class="fa-regular fa-note-sticky mr-1 text-amber-400"></i> Catatan: ${esc(item.catatan)}</p>` : ''}
 
             ${item.pesanBos ? `
               <div class="text-xs text-blue-200 bg-blue-950/30 p-2.5 rounded-xl border border-blue-500/30 flex items-start gap-2">
@@ -540,24 +521,27 @@
       }).join('');
     };
 
-    /* Actions: Add Order */
     window.prosesTambahOrder = async function(e) {
       e.preventDefault();
-      const nama = document.getElementById('inputNama').value;
-      const qty = document.getElementById('inputQty').value;
-      const kategori = 'Sparepart';
-      const motor = '-';
+      const namaEl = document.getElementById('inputNama');
+      const qtyEl = document.getElementById('inputQty');
+      const urgentEl = document.getElementById('inputUrgent');
+
+      const nama = namaEl ? namaEl.value.trim() : '';
+      const qty = qtyEl ? qtyEl.value.trim() : '';
+      const urgent = urgentEl ? urgentEl.checked : false;
+
+      if (!nama || !qty) {
+        window.showToast('Nama barang & quantity wajib diisi!', 'error');
+        return;
+      }
+
       const pemohon = currentRole === 'bos' ? 'Bos' : 'Mekanik';
-      const catatan = '';
-      const urgent = document.getElementById('inputUrgent') ? document.getElementById('inputUrgent').checked : false;
 
       const newItem = {
         nama,
         qty,
-        kategori,
-        motor,
         pemohon,
-        catatan,
         urgent,
         status: 'kosong',
         pesanBos: '',
@@ -575,7 +559,7 @@
           newItem.id = 'loc-' + Date.now();
           ordersData.unshift(newItem);
           saveToLocalStorage();
-          window.showToast('Tersimpan di storage lokal (Offline)');
+          window.showToast('Tersimpan di storage lokal');
         }
       } else {
         newItem.id = 'loc-' + Date.now();
@@ -584,10 +568,14 @@
         window.showToast('Tersimpan di storage lokal');
       }
 
+      /* Clean inputs automatically */
+      if (namaEl) namaEl.value = '';
+      if (qtyEl) qtyEl.value = '';
+      if (urgentEl) urgentEl.checked = false;
+
       window.tutupModal('modalTambah');
     };
 
-    /* Move from Kosong -> Di-order */
     window.orderItem = async function(id) {
       const updateData = {
         status: 'order',
@@ -607,7 +595,6 @@
       }
     };
 
-    /* Move from Order -> Ada di Bengkel */
     window.markArrived = async function(id) {
       const updateData = { status: 'selesai' };
 
@@ -615,7 +602,7 @@
         try {
           const docRef = doc(db, ...ordersCollectionPath, id);
           await updateDoc(docRef, updateData);
-          window.showToast('Barang sudah tiba di Bengkel!');
+          window.showToast('Barang telah tiba di Bengkel!');
         } catch(err) {
           updateLocalItem(id, updateData);
         }
@@ -624,7 +611,6 @@
       }
     };
 
-    /* Bos Update Form */
     window.prosesUpdateBos = async function(e) {
       e.preventDefault();
       const id = document.getElementById('bosOrderId').value;
@@ -664,7 +650,6 @@
       }
     }
 
-    /* Delete Item */
     window.prosesHapusOrder = async function() {
       if (!targetDeleteId) return;
 
@@ -672,7 +657,7 @@
         try {
           const docRef = doc(db, ...ordersCollectionPath, targetDeleteId);
           await deleteDoc(docRef);
-          window.showToast('Data berhasil dihapus');
+          window.showToast('Data berhasil dihapus!');
         } catch(err) {
           ordersData = ordersData.filter(o => o.id !== targetDeleteId);
           saveToLocalStorage();
@@ -688,7 +673,6 @@
       window.tutupModal('modalHapus');
     };
 
-    /* Database Initialization */
     async function initDatabase() {
       updateSyncBadge('loading', 'Menghubungkan Firebase...');
 
@@ -697,7 +681,7 @@
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Autentikasi sebelum membaca/menulis ke database
+        /* Authenticate before executing Firestore operations */
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -706,7 +690,7 @@
 
         const colRef = collection(db, ...ordersCollectionPath);
 
-        // Realtime Listener
+        /* Realtime Firestore listener */
         onSnapshot(colRef, (snapshot) => {
           isLocalStorageMode = false;
           ordersData = [];
@@ -716,20 +700,21 @@
           updateSyncBadge('online', 'Cloud Online');
           window.filterData();
         }, (error) => {
-          console.warn("Firestore listener error, switching to LocalStorage fallback:", error);
+          console.warn("Firestore listener fallback to LocalStorage:", error);
           isLocalStorageMode = true;
-          updateSyncBadge('local', 'Offline (Storage Lokal)');
+          updateSyncBadge('local', 'Storage Lokal');
           loadFromLocalStorage();
         });
 
       } catch (err) {
-        console.warn("Firebase initialization error:", err);
+        console.warn("Firebase init error, using LocalStorage:", err);
         isLocalStorageMode = true;
-        updateSyncBadge('local', 'Offline (Storage Lokal)');
+        updateSyncBadge('local', 'Storage Lokal');
         loadFromLocalStorage();
       }
     }
 
+    /* Start App on DOM Ready */
     document.addEventListener('DOMContentLoaded', () => {
       initDatabase();
     });
