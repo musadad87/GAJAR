@@ -25,9 +25,9 @@
         <div>
           <h1 class="text-lg font-bold text-white tracking-wide leading-tight">Order Stok Bengkel</h1>
           <div class="flex items-center gap-2">
-            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
               <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              Menghubungkan...
+              Menghubungkan Firebase...
             </span>
           </div>
         </div>
@@ -99,7 +99,7 @@
           <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari barang, motor, atau mekanik..." class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <!-- Filter Status -->
           <select id="filterStatus" onchange="window.filterData()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
             <option value="semua">Semua Status</option>
@@ -134,7 +134,7 @@
             + Oli MPX2
           </button>
           <button onclick="window.quickFill('Kampas Rem Depan', 'Kampas & Rem', 'Honda Matic')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
-            + Kampas Rem Depan Beat
+            + Kampas Rem Depan
           </button>
           <button onclick="window.quickFill('Busi CPR9EA-9', 'Busi & Kelistrikan', 'Vario / NMAX')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
             + Busi NGK
@@ -148,7 +148,7 @@
 
     <!-- Orders Cards Grid -->
     <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Data order akan di-render melalui Javascript -->
+      <!-- Data order di-render via Javascript -->
     </div>
 
   </main>
@@ -291,10 +291,21 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* Global Variables */
+    /* Firebase Configuration for nedi-4cb8d */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
+      authDomain: "nedi-4cb8d.firebaseapp.com",
+      projectId: "nedi-4cb8d",
+      storageBucket: "nedi-4cb8d.firebasestorage.app",
+      messagingSenderId: "594252750745",
+      appId: "1:594252750745:web:d4fc11854d1aaaa1093d08",
+      measurementId: "G-GY97JTDE3Y"
+    };
+
+    /* Global State */
     let db = null;
     let auth = null;
     let ordersCollectionRef = null;
@@ -399,7 +410,7 @@
     function aktifkanModeLokal(alasan) {
       isLocalStorageMode = true;
       updateSyncBadge('local', 'Penyimpanan Lokal (Offline)');
-      console.info("Info:", alasan);
+      console.info("Status Info:", alasan);
       loadFromLocalStorage();
     }
 
@@ -625,7 +636,7 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          const docRef = doc(db, ordersCollectionRef.path, id);
+          const docRef = doc(db, 'orders', id);
           await updateDoc(docRef, {
             status: statusChoice,
             pesanBos: pesanBos
@@ -656,7 +667,7 @@
     window.tandaiTibaDirect = async function(id) {
       if (!isLocalStorageMode && db) {
         try {
-          const docRef = doc(db, ordersCollectionRef.path, id);
+          const docRef = doc(db, 'orders', id);
           await updateDoc(docRef, { status: 'Ada di Bengkel' });
           window.showToast('Barang ditandai Tiba di Bengkel!');
         } catch(err) {
@@ -673,7 +684,7 @@
 
       if (!isLocalStorageMode && db) {
         try {
-          const docRef = doc(db, ordersCollectionRef.path, targetDeleteId);
+          const docRef = doc(db, 'orders', targetDeleteId);
           await deleteDoc(docRef);
           window.showToast('Orderan berhasil dihapus');
         } catch(err) {
@@ -692,35 +703,24 @@
       window.tutupModal('modalHapus');
     };
 
-    /* Firebase Configurations */
-    const firebaseConfig = {
-      apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
-      authDomain: "nedi-4cb8d.firebaseapp.com",
-      projectId: "nedi-4cb8d",
-      storageBucket: "nedi-4cb8d.firebasestorage.app",
-      messagingSenderId: "594252750745",
-      appId: "1:594252750745:web:d4fc11854d1aaaa1093d08",
-      measurementId: "G-GY97JTDE3Y"
-    };
-
     async function initDatabase() {
-      updateSyncBadge('loading', 'Menghubungkan...');
+      updateSyncBadge('loading', 'Menghubungkan Firebase...');
 
       try {
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
 
-        /* Anonymous Auth Sign In */
+        /* Try Anonymous Sign-In */
         try {
           await signInAnonymously(auth);
         } catch (authErr) {
-          console.warn("Auth error:", authErr);
+          console.warn("Auth info:", authErr);
         }
 
         ordersCollectionRef = collection(db, 'orders');
 
-        /* Realtime Firestore Listener */
+        /* Realtime Listener */
         onSnapshot(ordersCollectionRef, (snapshot) => {
           isLocalStorageMode = false;
           ordersData = [];
@@ -730,7 +730,7 @@
           updateSyncBadge('online', 'Cloud Online Active');
           window.filterData();
         }, (error) => {
-          console.warn("Firebase snapshot error (Beralih ke Penyimpanan Lokal):", error);
+          console.warn("Firebase snapshot error:", error);
           aktifkanModeLokal("Akses Firestore ditolak atau aturan belum aktif");
         });
 
@@ -740,7 +740,6 @@
       }
     }
 
-    /* Initialize on DOM Ready */
     document.addEventListener('DOMContentLoaded', () => {
       initDatabase();
     });
