@@ -261,14 +261,12 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Application Global Variables
     let db = null;
     let auth = null;
     let ordersCollectionRef = null;
     let ordersData = [];
     let currentRole = 'mekanik';
     let targetDeleteId = null;
-    let isFirebaseReady = false;
 
     // App ID & Configuration
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'bengkel-stok-app';
@@ -283,13 +281,7 @@
     };
 
     async function initDatabase() {
-      // Timeout pengaman 3.5 detik jika koneksi Firebase lambat / terhalang
-      const timeoutId = setTimeout(() => {
-        if (!isFirebaseReady) {
-          console.warn("Database online timeout, beralih ke penyimpanan lokal");
-          loadLocalStorageFallback();
-        }
-      }, 3500);
+      updateSyncBadge('loading', 'Menghubungkan ke Cloud...');
 
       try {
         const app = initializeApp(firebaseConfig);
@@ -297,17 +289,10 @@
         auth = getAuth(app);
 
         // Firebase Auth initialization
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (authErr) {
-          console.warn("Auth error, beralih ke mode lokal:", authErr);
-          clearTimeout(timeoutId);
-          loadLocalStorageFallback();
-          return;
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
 
         // Strict Path Rule: /artifacts/{appId}/public/data/orders
@@ -315,79 +300,37 @@
 
         // Realtime Listener
         onSnapshot(ordersCollectionRef, (snapshot) => {
-          clearTimeout(timeoutId);
           ordersData = [];
           snapshot.forEach((docSnap) => {
             ordersData.push({ id: docSnap.id, ...docSnap.data() });
           });
-          isFirebaseReady = true;
-          updateSyncBadge(true, "Cloud Firebase Aktif");
+          updateSyncBadge('online', 'Database Online Aktif');
           window.filterData();
         }, (error) => {
-          console.warn("Firebase snapshot error, using local storage fallback:", error);
-          clearTimeout(timeoutId);
-          loadLocalStorageFallback();
+          console.error("Firebase snapshot error:", error);
+          updateSyncBadge('offline', 'Koneksi Terputus');
+          showToast("Gagal terhubung ke database online!", "error");
         });
 
       } catch (err) {
-        console.warn("Database init error, running offline mode:", err);
-        clearTimeout(timeoutId);
-        loadLocalStorageFallback();
+        console.error("Database init error:", err);
+        updateSyncBadge('offline', 'Gagal Terhubung');
+        showToast("Gagal menginisialisasi koneksi online!", "error");
       }
     }
 
-    function loadLocalStorageFallback() {
-      isFirebaseReady = false;
-      const local = localStorage.getItem('bengkel_stok_orders');
-      if (local) {
-        ordersData = JSON.parse(local);
-      } else {
-        ordersData = [
-          {
-            id: 'demo-1',
-            nama: 'Oli MPX2 0.8 Liter',
-            kategori: 'Oli & Cairan',
-            motor: 'Honda Vario / Beat',
-            qty: '10 Botol',
-            pemohon: 'Mas Agus',
-            urgent: true,
-            status: 'Belum Dipesan',
-            catatan: 'Stok oli matic sisa 1 botol',
-            pesanBos: '',
-            tanggal: '2026-08-11'
-          },
-          {
-            id: 'demo-2',
-            nama: 'Kampas Rem Depan (Nissin)',
-            kategori: 'Kampas & Rem',
-            motor: 'Yamaha NMAX',
-            qty: '3 Set',
-            pemohon: 'Budi',
-            urgent: false,
-            status: 'Dipesan',
-            catatan: '',
-            pesanBos: 'Sudah di-order di Tokopedia, resi JNE: 881234. Est tiba besok.',
-            tanggal: '2026-08-10'
-          }
-        ];
-        saveLocalStorage();
-      }
-      updateSyncBadge(false, "Mode Penyimpanan Lokal");
-      window.filterData();
-    }
-
-    function saveLocalStorage() {
-      localStorage.setItem('bengkel_stok_orders', JSON.stringify(ordersData));
-    }
-
-    function updateSyncBadge(online, text) {
+    function updateSyncBadge(status, text) {
       const el = document.getElementById('syncStatus');
-      if (online) {
+      if (!el) return;
+      if (status === 'online') {
         el.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
         el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${text}`;
-      } else {
+      } else if (status === 'loading') {
         el.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
-        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${text}`;
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> ${text}`;
+      } else {
+        el.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/20 text-rose-300 border border-rose-500/30";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${text}`;
       }
     }
 
@@ -549,11 +492,11 @@
       if (role === 'mekanik') {
         btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow";
         btnBos.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white";
-        showToast("Switched to Mode Mekanik / Anak Buah", "info");
+        showToast("Switched to Mode Mekanik", "info");
       } else {
         btnBos.className = "px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white shadow";
         btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white";
-        showToast("Switched to Mode Bos / Owner Bengkel", "info");
+        showToast("Switched to Mode Bos Bengkel", "info");
       }
       window.filterData();
     };
@@ -575,6 +518,11 @@
 
     window.simpanOrder = async function(e) {
       e.preventDefault();
+      if (!ordersCollectionRef) {
+        showToast("Gagal menyimpan: Belum terhubung ke server online!", "error");
+        return;
+      }
+
       const newOrder = {
         nama: document.getElementById('inputNama').value.trim(),
         kategori: document.getElementById('inputKategori').value,
@@ -588,28 +536,15 @@
         tanggal: new Date().toISOString().split('T')[0]
       };
 
-      if (isFirebaseReady && ordersCollectionRef) {
-        try {
-          await addDoc(ordersCollectionRef, newOrder);
-          showToast("Order sparepart berhasil disimpan!", "success");
-        } catch (err) {
-          console.error("Firebase add error:", err);
-          saveLocallyNewOrder(newOrder);
-        }
-      } else {
-        saveLocallyNewOrder(newOrder);
+      try {
+        await addDoc(ordersCollectionRef, newOrder);
+        showToast("Order sparepart berhasil disimpan di Cloud!", "success");
+        window.tutupModal('modalTambah');
+      } catch (err) {
+        console.error("Firebase add error:", err);
+        showToast("Gagal menyimpan order online: " + err.message, "error");
       }
-
-      window.tutupModal('modalTambah');
     };
-
-    function saveLocallyNewOrder(order) {
-      order.id = 'local-' + Date.now();
-      ordersData.unshift(order);
-      saveLocalStorage();
-      window.filterData();
-      showToast("Order sparepart tersimpan (Lokal)", "success");
-    }
 
     window.bukaModalStatusBos = function(id, currentStatus, currentPesan) {
       document.getElementById('bosOrderId').value = id;
@@ -624,42 +559,37 @@
       const status = document.getElementById('bosStatusChoice').value;
       const pesanBos = document.getElementById('bosPesan').value.trim();
 
-      if (isFirebaseReady && db) {
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
-          await updateDoc(docRef, { status, pesanBos });
-          showToast("Status order diperbarui oleh Bos!", "success");
-        } catch (err) {
-          console.error("Firebase update error:", err);
-          updateLocally(id, { status, pesanBos });
-        }
-      } else {
-        updateLocally(id, { status, pesanBos });
+      if (!db || !id) {
+        showToast("Gagal memperbarui: Koneksi online tidak tersedia!", "error");
+        return;
       }
 
-      window.tutupModal('modalStatusBos');
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+        await updateDoc(docRef, { status, pesanBos });
+        showToast("Status order diperbarui di Cloud!", "success");
+        window.tutupModal('modalStatusBos');
+      } catch (err) {
+        console.error("Firebase update error:", err);
+        showToast("Gagal meng-update status online: " + err.message, "error");
+      }
     };
 
     window.tandaiTibaDirect = async function(id) {
-      if (isFirebaseReady && db) {
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
-          await updateDoc(docRef, { status: 'Ada di Bengkel' });
-          showToast("Barang ditandai Tiba di Bengkel!", "success");
-        } catch (err) {
-          updateLocally(id, { status: 'Ada di Bengkel' });
-        }
-      } else {
-        updateLocally(id, { status: 'Ada di Bengkel' });
+      if (!db || !id) {
+        showToast("Gagal memperbarui: Koneksi online tidak tersedia!", "error");
+        return;
+      }
+
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+        await updateDoc(docRef, { status: 'Ada di Bengkel' });
+        showToast("Barang ditandai Tiba di Bengkel!", "success");
+      } catch (err) {
+        console.error("Firebase update error:", err);
+        showToast("Gagal memperbarui status online: " + err.message, "error");
       }
     };
-
-    function updateLocally(id, updateFields) {
-      ordersData = ordersData.map(o => o.id === id ? { ...o, ...updateFields } : o);
-      saveLocalStorage();
-      window.filterData();
-      showToast("Status diperbarui (Lokal)", "success");
-    }
 
     window.konfirmasiHapus = function(id, nama) {
       targetDeleteId = id;
@@ -670,29 +600,23 @@
     window.prosesHapus = async function() {
       if (!targetDeleteId) return;
 
-      if (isFirebaseReady && db) {
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', targetDeleteId);
-          await deleteDoc(docRef);
-          showToast("Orderan berhasil dihapus", "info");
-        } catch (err) {
-          console.error("Firebase delete error:", err);
-          deleteLocally(targetDeleteId);
-        }
-      } else {
-        deleteLocally(targetDeleteId);
+      if (!db) {
+        showToast("Gagal menghapus: Koneksi online tidak tersedia!", "error");
+        return;
+      }
+
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', targetDeleteId);
+        await deleteDoc(docRef);
+        showToast("Orderan berhasil dihapus dari Cloud", "info");
+      } catch (err) {
+        console.error("Firebase delete error:", err);
+        showToast("Gagal menghapus order online: " + err.message, "error");
       }
 
       targetDeleteId = null;
       window.tutupModal('modalHapus');
     };
-
-    function deleteLocally(id) {
-      ordersData = ordersData.filter(o => o.id !== id);
-      saveLocalStorage();
-      window.filterData();
-      showToast("Orderan berhasil dihapus", "info");
-    }
 
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
