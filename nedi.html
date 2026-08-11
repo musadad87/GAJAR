@@ -283,16 +283,31 @@
     };
 
     async function initDatabase() {
+      // Timeout pengaman 3.5 detik jika koneksi Firebase lambat / terhalang
+      const timeoutId = setTimeout(() => {
+        if (!isFirebaseReady) {
+          console.warn("Database online timeout, beralih ke penyimpanan lokal");
+          loadLocalStorageFallback();
+        }
+      }, 3500);
+
       try {
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Firebase Auth initialization rule
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+        // Firebase Auth initialization
+        try {
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (authErr) {
+          console.warn("Auth error, beralih ke mode lokal:", authErr);
+          clearTimeout(timeoutId);
+          loadLocalStorageFallback();
+          return;
         }
 
         // Strict Path Rule: /artifacts/{appId}/public/data/orders
@@ -300,6 +315,7 @@
 
         // Realtime Listener
         onSnapshot(ordersCollectionRef, (snapshot) => {
+          clearTimeout(timeoutId);
           ordersData = [];
           snapshot.forEach((docSnap) => {
             ordersData.push({ id: docSnap.id, ...docSnap.data() });
@@ -309,11 +325,13 @@
           window.filterData();
         }, (error) => {
           console.warn("Firebase snapshot error, using local storage fallback:", error);
+          clearTimeout(timeoutId);
           loadLocalStorageFallback();
         });
 
       } catch (err) {
         console.warn("Database init error, running offline mode:", err);
+        clearTimeout(timeoutId);
         loadLocalStorageFallback();
       }
     }
