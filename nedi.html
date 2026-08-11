@@ -2,32 +2,38 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Order Stok Bengkel Motor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#0d6efd">
+  <meta name="description" content="Catatan Barang Kosong - Lancar Langgeng Motor">
+  <title>Catatan Barang Kosong - Lancar Langgeng Motor</title>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-16 antialiased selection:bg-blue-500 selection:text-white">
 
   <!-- Navigation Header -->
   <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-30 shadow-lg">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+    <div class="max-w-4xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
-        <div class="bg-gradient-to-tr from-amber-500 to-amber-400 p-2.5 rounded-xl text-slate-950 font-black shadow-md">
-          <i class="fa-solid fa-wrench text-xl"></i>
+        <div class="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl text-white font-black shadow-md shadow-blue-900/30">
+          <i class="fa-solid fa-boxes-packing text-xl"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white tracking-wide leading-tight">Order Stok Bengkel</h1>
-          <div class="flex items-center gap-2">
-            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              Menghubungkan Firebase...
+          <h1 class="text-lg font-extrabold text-white tracking-wide leading-tight">Catatan Barang Kosong</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs font-semibold text-blue-400">Lancar Langgeng Motor</span>
+            <span class="text-slate-600">•</span>
+            <span id="syncBadge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              Menghubungkan...
             </span>
           </div>
         </div>
@@ -35,8 +41,8 @@
 
       <!-- Role Switcher -->
       <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/80 text-xs">
-        <button id="btnRoleMekanik" onclick="window.setRole('mekanik')" class="px-3 py-1.5 rounded-lg transition-all bg-amber-500 text-slate-950 font-bold shadow">
-          <i class="fa-solid fa-user-gear mr-1"></i> Mode Mekanik
+        <button id="btnRoleMekanik" onclick="window.setRole('mekanik')" class="px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white font-bold shadow">
+          <i class="fa-solid fa-user-gear mr-1"></i> Mekanik
         </button>
         <button id="btnRoleBos" onclick="window.setRole('bos')" class="px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white font-medium">
           <i class="fa-solid fa-user-tie mr-1"></i> Mode Bos
@@ -45,72 +51,41 @@
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+  <main class="max-w-4xl mx-auto px-4 pt-5 space-y-5">
 
-    <!-- Metrics Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700/60 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-slate-400">Belum Dipesan</p>
-          <p class="text-2xl font-bold text-amber-400 mt-0.5" id="countBelum">0</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-          <i class="fa-solid fa-hourglass-start text-lg"></i>
-        </div>
-      </div>
+    <!-- Tab Navigation Bar -->
+    <div class="grid grid-cols-3 gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700/80 shadow-md">
+      <button id="tabBtnKosong" onclick="window.setActiveTab('kosong')" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 bg-blue-600 text-white shadow">
+        <i class="fa-solid fa-box-open"></i>
+        <span>Barang Kosong</span>
+        <span id="badgeKosong" class="bg-blue-950/60 px-2 py-0.5 rounded-full text-[11px]">0</span>
+      </button>
 
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700/60 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-slate-400">Sudah Dipesan</p>
-          <p class="text-2xl font-bold text-blue-400 mt-0.5" id="countDipesan">0</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-          <i class="fa-solid fa-truck-fast text-lg"></i>
-        </div>
-      </div>
+      <button id="tabBtnOrder" onclick="window.setActiveTab('order')" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-truck-fast"></i>
+        <span>Di-order</span>
+        <span id="badgeOrder" class="bg-slate-900 px-2 py-0.5 rounded-full text-[11px]">0</span>
+      </button>
 
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700/60 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-slate-400">Ada di Bengkel</p>
-          <p class="text-2xl font-bold text-emerald-400 mt-0.5" id="countSelesai">0</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-          <i class="fa-solid fa-circle-check text-lg"></i>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 p-3.5 rounded-2xl border border-rose-500/30 bg-rose-950/10 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-rose-300">Stok Darurat</p>
-          <p class="text-2xl font-bold text-rose-400 mt-0.5" id="countUrgent">0</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-          <i class="fa-solid fa-triangle-exclamation text-lg animate-pulse"></i>
-        </div>
-      </div>
+      <button id="tabBtnSelesai" onclick="window.setActiveTab('selesai')" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Ada di Bengkel</span>
+        <span id="badgeSelesai" class="bg-slate-900 px-2 py-0.5 rounded-full text-[11px]">0</span>
+      </button>
     </div>
 
     <!-- Action Panel & Quick Fill -->
-    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-4">
+    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/80 shadow-sm space-y-3.5">
       <div class="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-        <!-- Search -->
+        <!-- Search Input -->
         <div class="relative flex-1">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari barang, motor, atau mekanik..." class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+          <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari nama barang, motor, atau pemohon..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs md:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <!-- Filter Status -->
-          <select id="filterStatus" onchange="window.filterData()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
-            <option value="semua">Semua Status</option>
-            <option value="Belum Dipesan">⏳ Belum Dipesan</option>
-            <option value="Dipesan">🚚 Dipesan</option>
-            <option value="Ada di Bengkel">✅ Ada di Bengkel</option>
-            <option value="urgent">🚨 Khusus Urgent</option>
-          </select>
-
+        <div class="flex items-center gap-2">
           <!-- Filter Kategori -->
-          <select id="filterKategori" onchange="window.filterData()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+          <select id="filterKategori" onchange="window.filterData()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
             <option value="semua">Semua Kategori</option>
             <option value="Oli & Cairan">Oli & Cairan</option>
             <option value="Kampas & Rem">Kampas & Rem</option>
@@ -120,104 +95,76 @@
             <option value="Lainnya">Lainnya</option>
           </select>
 
-          <button onclick="window.bukaModalTambah()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
-            <i class="fa-solid fa-plus text-sm"></i> Tambah Order
+          <!-- Add Item Button -->
+          <button onclick="window.bukaModalTambah()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-plus text-sm"></i> Tambahkan
           </button>
         </div>
       </div>
 
-      <!-- Quick Fill Shortcuts -->
-      <div class="pt-2 border-t border-slate-700/60">
-        <span class="text-[11px] font-semibold text-slate-400 mr-2 uppercase tracking-wider block mb-1.5">Isi Cepat Sparepart Sering Habis:</span>
-        <div class="flex flex-wrap gap-1.5">
-          <button onclick="window.quickFill('Oli MPX2 0.8L', 'Oli & Cairan', 'Honda Beat/Vario')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
+      <!-- Quick Fill Buttons -->
+      <div class="pt-2 border-t border-slate-700/60 flex items-center gap-2 overflow-x-auto pb-1">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Isi Cepat:</span>
+        <div class="flex gap-1.5">
+          <button onclick="window.quickFill('Oli MPX2 0.8L', '10 Botol')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Oli MPX2
           </button>
-          <button onclick="window.quickFill('Kampas Rem Depan', 'Kampas & Rem', 'Honda Matic')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
+          <button onclick="window.quickFill('Kampas Rem Depan', '5 Set')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Kampas Rem Depan
           </button>
-          <button onclick="window.quickFill('Busi CPR9EA-9', 'Busi & Kelistrikan', 'Vario / NMAX')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
+          <button onclick="window.quickFill('Busi CPR9EA-9', '10 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Busi NGK
           </button>
-          <button onclick="window.quickFill('Aki GTZ5S 12V', 'Busi & Kelistrikan', 'Universal')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition">
+          <button onclick="window.quickFill('Aki GTZ5S 12V', '3 Pcs')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 transition whitespace-nowrap">
             + Aki GS
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Orders Cards Grid -->
-    <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Data order di-render via Javascript -->
+    <!-- List Cards Container -->
+    <div id="cardsList" class="space-y-3">
+      <!-- Cards rendered via JavaScript -->
     </div>
 
   </main>
 
-  <!-- Modal Tambah Order -->
-  <div id="modalTambah" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <!-- Modal Tambah Barang Kosong -->
+  <div id="modalTambah" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-box-archive text-amber-400"></i> Form Order Sparepart
+          <i class="fa-solid fa-box-archive text-blue-400"></i> Form Catat Barang Kosong
         </h3>
         <button onclick="window.tutupModal('modalTambah')" class="text-slate-400 hover:text-white p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <form id="formTambahOrder" onsubmit="window.prosesTambahOrder(event)" class="space-y-4">
+      <form id="formTambahOrder" onsubmit="window.prosesTambahOrder(event)" class="space-y-3.5">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Barang / Sparepart *</label>
-          <input type="text" id="inputNama" required placeholder="Contoh: Oli Yamalube Matic 0.8L" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Kategori *</label>
-            <select id="inputKategori" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
-              <option value="Oli & Cairan">Oli & Cairan</option>
-              <option value="Kampas & Rem">Kampas & Rem</option>
-              <option value="Ban & Velg">Ban & Velg</option>
-              <option value="Busi & Kelistrikan">Busi & Kelistrikan</option>
-              <option value="Engine & Rantai">Engine & Rantai</option>
-              <option value="Lainnya">Lainnya</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Jumlah (Qty) *</label>
-            <input type="text" id="inputQty" required placeholder="Misal: 5 Botol / 2 Pcs" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Untuk Motor</label>
-            <input type="text" id="inputMotor" placeholder="Contoh: Honda Beat / NMAX" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Nama Pemohon (Mekanik)</label>
-            <input type="text" id="inputPemohon" placeholder="Contoh: Alex" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
-          </div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Barang *</label>
+          <input type="text" id="inputNama" required placeholder="Contoh: Kampas rem depan" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tambahan</label>
-          <input type="text" id="inputCatatan" placeholder="Contoh: Stok di etalase sudah habis total" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-amber-500 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Quantity (Jumlah) *</label>
+          <input type="text" id="inputQty" required placeholder="Contoh: 5 Pcs / 1 Box" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
         </div>
 
         <div class="flex items-center gap-2 bg-rose-950/30 p-3 rounded-xl border border-rose-500/30">
           <input type="checkbox" id="inputUrgent" class="w-4 h-4 rounded text-rose-500 border-slate-700 bg-slate-900 focus:ring-0">
           <label for="inputUrgent" class="text-xs text-rose-300 font-semibold cursor-pointer">
-            🚨 Tandai Stok Darurat (Barang Sangat Dibutuhkan)
+            🚨 Tandai Stok Darurat (Mendesak)
           </label>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-700/60">
           <button type="button" onclick="window.tutupModal('modalTambah')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
             Batal
           </button>
-          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-md">
-            Simpan Order
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-md">
+            Simpan Barang
           </button>
         </div>
       </form>
@@ -225,11 +172,11 @@
   </div>
 
   <!-- Modal Update Status Bos -->
-  <div id="modalStatusBos" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalStatusBos" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-user-tie text-blue-400"></i> Update Status Order (Bos)
+          <i class="fa-solid fa-user-tie text-blue-400"></i> Update Status Bos
         </h3>
         <button onclick="window.tutupModal('modalStatusBos')" class="text-slate-400 hover:text-white p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -240,20 +187,20 @@
         <input type="hidden" id="bosOrderId">
 
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Status Pemesanan</label>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Status Pemesanan</label>
           <select id="bosStatusChoice" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none">
-            <option value="Belum Dipesan">⏳ Belum Dipesan</option>
-            <option value="Dipesan">🚚 Sudah Dipesan (Proses Kirim)</option>
-            <option value="Ada di Bengkel">✅ Sudah Tiba di Bengkel</option>
+            <option value="kosong">📦 Barang Kosong (Belum Order)</option>
+            <option value="order">🚚 Di-order (Proses Pengiriman)</option>
+            <option value="selesai">✅ Ada di Bengkel (Sudah Tiba)</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Pesan dari Bos (Opsional)</label>
-          <textarea id="bosPesan" rows="3" placeholder="Contoh: Sudah diorder dari Tokopedia, resi JNE123. Perkiraan sampai besok siang." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none"></textarea>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Pesan dari Bos (Opsional)</label>
+          <textarea id="bosPesan" rows="3" placeholder="Contoh: Sudah diorder via Tokopedia, resi JNE12345. Estimasi besok sore." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:outline-none"></textarea>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-700/60">
           <button type="button" onclick="window.tutupModal('modalStatusBos')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
             Batal
           </button>
@@ -266,14 +213,14 @@
   </div>
 
   <!-- Modal Hapus -->
-  <div id="modalHapus" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalHapus" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center space-y-4">
       <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl">
         <i class="fa-solid fa-trash-can"></i>
       </div>
       <div>
-        <h3 class="text-base font-bold text-white">Hapus Order Barang?</h3>
-        <p class="text-xs text-slate-400 mt-1">Data orderan ini akan dihapus permanen.</p>
+        <h3 class="text-base font-bold text-white">Hapus Catatan Barang?</h3>
+        <p class="text-xs text-slate-400 mt-1">Data akan dihapus secara permanen dari sistem.</p>
       </div>
       <div class="flex justify-center gap-2 pt-2">
         <button onclick="window.tutupModal('modalHapus')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
@@ -294,7 +241,10 @@
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* Firebase Configuration for nedi-4cb8d */
+    /* Constants & Config */
+    const LOCAL_KEY = "llm_barang_kosong_v1";
+    const DAY = 24 * 60 * 60 * 1000;
+
     const firebaseConfig = {
       apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
       authDomain: "nedi-4cb8d.firebaseapp.com",
@@ -308,13 +258,14 @@
     /* Global State */
     let db = null;
     let auth = null;
-    let ordersCollectionRef = null;
+    let ordersRef = null;
     let ordersData = [];
-    let currentRole = 'mekanik';
+    let currentTab = 'kosong'; // 'kosong', 'order', 'selesai'
+    let currentRole = 'mekanik'; // 'mekanik', 'bos'
     let targetDeleteId = null;
     let isLocalStorageMode = false;
 
-    /* Helper function for Toast Notifications */
+    /* Toast Helper */
     window.showToast = function(message, type = 'success') {
       const container = document.getElementById('toastContainer');
       if (!container) return;
@@ -325,35 +276,58 @@
       toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check' : 'fa-info-circle'}"></i> <span>${message}</span>`;
       
       container.appendChild(toast);
-      setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      }, 10);
-
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
       setTimeout(() => {
         toast.classList.add('opacity-0');
         setTimeout(() => toast.remove(), 300);
       }, 3000);
     };
 
-    /* Role Switcher Handler */
+    /* Tab Switcher */
+    window.setActiveTab = function(tabName) {
+      currentTab = tabName;
+      const tabBtnKosong = document.getElementById('tabBtnKosong');
+      const tabBtnOrder = document.getElementById('tabBtnOrder');
+      const tabBtnSelesai = document.getElementById('tabBtnSelesai');
+
+      [tabBtnKosong, tabBtnOrder, tabBtnSelesai].forEach(btn => {
+        if (btn) btn.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+      });
+
+      if (tabName === 'kosong' && tabBtnKosong) {
+        tabBtnKosong.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 bg-blue-600 text-white shadow";
+      } else if (tabName === 'order' && tabBtnOrder) {
+        tabBtnOrder.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 bg-emerald-600 text-white shadow";
+      } else if (tabName === 'selesai' && tabBtnSelesai) {
+        tabBtnSelesai.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 bg-slate-700 text-white shadow";
+      }
+
+      window.filterData();
+    };
+
+    /* Role Switcher */
     window.setRole = function(role) {
       currentRole = role;
       const btnMekanik = document.getElementById('btnRoleMekanik');
       const btnBos = document.getElementById('btnRoleBos');
       if (role === 'mekanik') {
-        if (btnMekanik) btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all bg-amber-500 text-slate-950 font-bold shadow";
+        if (btnMekanik) btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white font-bold shadow";
         if (btnBos) btnBos.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white font-medium";
       } else {
-        if (btnBos) btnBos.className = "px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white font-bold shadow";
+        if (btnBos) btnBos.className = "px-3 py-1.5 rounded-lg transition-all bg-amber-500 text-slate-950 font-bold shadow";
         if (btnMekanik) btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white font-medium";
       }
       window.filterData();
     };
 
-    /* Modal Management */
+    /* Modals Control */
     window.bukaModal = function(id) {
       const modal = document.getElementById(id);
       if (modal) modal.classList.remove('hidden');
+    };
+
+    window.bukaModalTambah = function() {
+      window.bukaModal('modalTambah');
     };
 
     window.tutupModal = function(id) {
@@ -361,9 +335,11 @@
       if (modal) modal.classList.add('hidden');
     };
 
-    window.bukaModalTambah = function() {
-      const form = document.getElementById('formTambahOrder');
-      if (form) form.reset();
+    window.quickFill = function(nama, qty) {
+      const namaEl = document.getElementById('inputNama');
+      const qtyEl = document.getElementById('inputQty');
+      if (namaEl) namaEl.value = nama;
+      if (qtyEl) qtyEl.value = qty;
       window.bukaModal('modalTambah');
     };
 
@@ -371,7 +347,7 @@
       const item = ordersData.find(o => o.id === id);
       if (item) {
         document.getElementById('bosOrderId').value = id;
-        document.getElementById('bosStatusChoice').value = item.status || 'Dipesan';
+        document.getElementById('bosStatusChoice').value = item.status || 'order';
         document.getElementById('bosPesan').value = item.pesanBos || '';
         window.bukaModal('modalStatusBos');
       }
@@ -382,71 +358,55 @@
       window.bukaModal('modalHapus');
     };
 
-    window.quickFill = function(nama, kategori, motor) {
-      document.getElementById('inputNama').value = nama;
-      document.getElementById('inputKategori').value = kategori;
-      document.getElementById('inputMotor').value = motor;
-      window.bukaModal('modalTambah');
-    };
-
-    /* Update Badge Status UI */
+    /* Sync Badge */
     function updateSyncBadge(type, text) {
       const badge = document.getElementById('syncBadge');
       if (!badge) return;
-
       if (type === 'online') {
-        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${text}`;
+        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${text}`;
       } else if (type === 'local') {
-        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${text}`;
+        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${text}`;
       } else {
-        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-700 text-slate-300 border border-slate-600";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span> ${text}`;
+        badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-700 text-slate-300 border border-slate-600";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span> ${text}`;
       }
     }
 
-    /* Fallback Local Storage Mode */
-    function aktifkanModeLokal(alasan) {
-      isLocalStorageMode = true;
-      updateSyncBadge('local', 'Penyimpanan Lokal (Offline)');
-      console.info("Status Info:", alasan);
-      loadFromLocalStorage();
-    }
-
+    /* Fallback Local Storage */
     function loadFromLocalStorage() {
-      const stored = localStorage.getItem('bengkel_orders_data');
+      const stored = localStorage.getItem(LOCAL_KEY);
       if (stored) {
-        try {
-          ordersData = JSON.parse(stored);
-        } catch(e) {
-          ordersData = [];
-        }
+        try { ordersData = JSON.parse(stored); } catch(e) { ordersData = []; }
       } else {
         ordersData = [
           {
             id: 'sample-1',
-            nama: 'Oli Yamalube Silver 0.8L',
-            kategori: 'Oli & Cairan',
-            qty: '10 Botol',
-            motor: 'Yamaha Jupiter/Vega',
-            pemohon: 'Mekanik Budi',
-            catatan: 'Stok di etalase sisa 1 botol',
+            nama: 'Kampas Rem Depan Beat',
+            qty: '5 Set',
+            kategori: 'Kampas & Rem',
+            motor: 'Honda Beat All Series',
+            pemohon: 'Agus',
+            catatan: 'Habis total di rak depan',
             urgent: true,
-            status: 'Belum Dipesan',
+            status: 'kosong',
+            createdAt: Date.now(),
             tanggal: new Date().toLocaleDateString('id-ID')
           },
           {
             id: 'sample-2',
-            nama: 'Kampas Rem Depan Beat',
-            kategori: 'Kampas & Rem',
-            qty: '5 Set',
-            motor: 'Honda Beat All Series',
-            pemohon: 'Mekanik Agus',
-            catatan: 'Laris banget',
+            nama: 'Oli MPX2 0.8L',
+            qty: '10 Botol',
+            kategori: 'Oli & Cairan',
+            motor: 'Honda Vario / Beat',
+            pemohon: 'Budi',
+            catatan: 'Laris manis',
             urgent: false,
-            status: 'Dipesan',
-            pesanBos: 'Sudah diorder dari Supplier Surabaya, estimasi tiba besok sore',
+            status: 'order',
+            orderedAt: Date.now() - (2 * DAY),
+            pesanBos: 'Sudah diorder via supplier, perkiraan besok tiba',
+            createdAt: Date.now() - (2 * DAY),
             tanggal: new Date().toLocaleDateString('id-ID')
           }
         ];
@@ -456,124 +416,118 @@
     }
 
     function saveToLocalStorage() {
-      localStorage.setItem('bengkel_orders_data', JSON.stringify(ordersData));
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(ordersData));
       window.filterData();
     }
 
-    /* Filter & Render Data Cards */
+    /* Escape HTML */
+    function esc(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+    }
+
+    /* Filter and Render Data Cards */
     window.filterData = function() {
       const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
-      const statusVal = document.getElementById('filterStatus')?.value || 'semua';
       const katVal = document.getElementById('filterKategori')?.value || 'semua';
 
-      let countBelum = 0, countDipesan = 0, countSelesai = 0, countUrgent = 0;
+      let countKosong = 0, countOrder = 0, countSelesai = 0;
       ordersData.forEach(item => {
-        if (item.status === 'Belum Dipesan') countBelum++;
-        if (item.status === 'Dipesan') countDipesan++;
-        if (item.status === 'Ada di Bengkel') countSelesai++;
-        if (item.urgent) countUrgent++;
+        if (item.status === 'kosong') countKosong++;
+        if (item.status === 'order') countOrder++;
+        if (item.status === 'selesai') countSelesai++;
       });
 
-      if (document.getElementById('countBelum')) document.getElementById('countBelum').innerText = countBelum;
-      if (document.getElementById('countDipesan')) document.getElementById('countDipesan').innerText = countDipesan;
-      if (document.getElementById('countSelesai')) document.getElementById('countSelesai').innerText = countSelesai;
-      if (document.getElementById('countUrgent')) document.getElementById('countUrgent').innerText = countUrgent;
+      if (document.getElementById('badgeKosong')) document.getElementById('badgeKosong').innerText = countKosong;
+      if (document.getElementById('badgeOrder')) document.getElementById('badgeOrder').innerText = countOrder;
+      if (document.getElementById('badgeSelesai')) document.getElementById('badgeSelesai').innerText = countSelesai;
 
       const filtered = ordersData.filter(item => {
+        const itemStatus = item.status || 'kosong';
+        if (itemStatus !== currentTab) return false;
+
         const matchSearch = (item.nama || '').toLowerCase().includes(searchVal) ||
                             (item.motor || '').toLowerCase().includes(searchVal) ||
                             (item.pemohon || '').toLowerCase().includes(searchVal);
-        
-        let matchStatus = true;
-        if (statusVal === 'urgent') {
-          matchStatus = item.urgent === true;
-        } else if (statusVal !== 'semua') {
-          matchStatus = item.status === statusVal;
-        }
 
-        let matchKat = true;
-        if (katVal !== 'semua') {
-          matchKat = item.kategori === katVal;
-        }
+        const matchKat = (katVal === 'semua') || (item.kategori === katVal);
 
-        return matchSearch && matchStatus && matchKat;
+        return matchSearch && matchKat;
       });
 
-      const container = document.getElementById('ordersContainer');
+      const container = document.getElementById('cardsList');
       if (!container) return;
 
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="col-span-full bg-slate-800/60 p-8 rounded-2xl border border-slate-700/60 text-center text-slate-400">
-            <i class="fa-solid fa-box-open text-4xl mb-2 text-slate-500"></i>
-            <p class="text-sm">Belum ada orderan sparepart yang sesuai.</p>
+          <div class="bg-slate-800/60 p-8 rounded-2xl border border-slate-700/60 text-center text-slate-400 space-y-2">
+            <i class="fa-solid fa-box-open text-3xl text-slate-500"></i>
+            <p class="text-sm">Belum ada barang di kategori ini.</p>
           </div>
         `;
         return;
       }
 
       container.innerHTML = filtered.map(item => {
-        let badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-        let statusIcon = 'fa-hourglass-start';
-        if (item.status === 'Dipesan') {
-          badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-          statusIcon = 'fa-truck-fast';
-        } else if (item.status === 'Ada di Bengkel') {
-          badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-          statusIcon = 'fa-circle-check';
+        let timerBadge = '';
+        if (item.status === 'order' && item.orderedAt) {
+          const daysLeft = Math.max(0, Math.ceil((7 * DAY - (Date.now() - item.orderedAt)) / DAY));
+          timerBadge = `<span class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"><i class="fa-regular fa-clock"></i> Sisa ${daysLeft} hari</span>`;
         }
 
         return `
-          <div class="bg-slate-800 p-4 rounded-2xl border ${item.urgent ? 'border-rose-500/50 bg-rose-950/10' : 'border-slate-700/70'} shadow-sm space-y-3 relative flex flex-col justify-between">
-            <div class="space-y-2">
-              <div class="flex justify-between items-start gap-2">
-                <div>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700">${item.kategori || 'Sparepart'}</span>
-                    ${item.urgent ? '<span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse">🚨 URGENT</span>' : ''}
-                  </div>
-                  <h3 class="font-bold text-white text-base mt-1.5">${item.nama}</h3>
+          <div class="bg-slate-800 p-4 rounded-2xl border ${item.urgent ? 'border-rose-500/50 bg-rose-950/10' : 'border-slate-700/70'} shadow-sm space-y-3">
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700">${esc(item.kategori || 'Sparepart')}</span>
+                  ${item.urgent ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse">🚨 STOK DARURAT</span>' : ''}
                 </div>
-                <span class="px-2.5 py-1 text-xs font-bold rounded-full border flex items-center gap-1.5 ${badgeColor}">
-                  <i class="fa-solid ${statusIcon}"></i> ${item.status || 'Belum Dipesan'}
-                </span>
+                <h3 class="font-bold text-white text-base mt-1.5">${esc(item.nama)}</h3>
               </div>
-
-              <div class="grid grid-cols-2 gap-2 text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50">
-                <div><span class="text-slate-500">Motor:</span> <strong class="text-slate-200">${item.motor || '-'}</strong></div>
-                <div><span class="text-slate-500">Jumlah:</span> <strong class="text-amber-400 font-bold">${item.qty || '-'}</strong></div>
-                <div><span class="text-slate-500">Mekanik:</span> <strong class="text-slate-200">${item.pemohon || '-'}</strong></div>
-                <div><span class="text-slate-500">Tanggal:</span> <strong class="text-slate-200">${item.tanggal || '-'}</strong></div>
-              </div>
-
-              ${item.catatan ? `<p class="text-xs text-amber-200/90 italic bg-amber-950/20 p-2 rounded-lg border border-amber-500/20"><i class="fa-regular fa-note-sticky mr-1 text-amber-400"></i> Catatan: ${item.catatan}</p>` : ''}
-
-              ${item.pesanBos ? `
-                <div class="text-xs text-blue-200 bg-blue-950/30 p-2.5 rounded-xl border border-blue-500/30 flex items-start gap-2">
-                  <i class="fa-solid fa-user-tie text-blue-400 mt-0.5"></i>
-                  <div>
-                    <strong class="block text-[10px] uppercase tracking-wider text-blue-400 font-bold">Pesan Bos Bengkel:</strong>
-                    <span>${item.pesanBos}</span>
-                  </div>
-                </div>
-              ` : ''}
+              ${timerBadge}
             </div>
 
-            <div class="flex justify-between items-center pt-3 border-t border-slate-700/60 mt-2">
-              <div class="flex gap-1.5">
-                ${item.status === 'Dipesan' ? `
-                  <button onclick="window.tandaiTibaDirect('${item.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
-                    <i class="fa-solid fa-box-open"></i> Barang Tiba
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50">
+              <div><span class="text-slate-500 block text-[10px]">QUANTITY</span> <strong class="text-amber-400 font-bold">${esc(item.qty || '-')}</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">MOTOR</span> <strong class="text-slate-200">${esc(item.motor || '-')}</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">PEMOHON</span> <strong class="text-slate-200">${esc(item.pemohon || '-')}</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">TANGGAL</span> <strong class="text-slate-200">${esc(item.tanggal || '-')}</strong></div>
+            </div>
+
+            ${item.catatan ? `<p class="text-xs text-amber-200/90 italic bg-amber-950/20 p-2 rounded-lg border border-amber-500/20"><i class="fa-regular fa-note-sticky mr-1 text-amber-400"></i> Catatan: ${esc(item.catatan)}</p>` : ''}
+
+            ${item.pesanBos ? `
+              <div class="text-xs text-blue-200 bg-blue-950/30 p-2.5 rounded-xl border border-blue-500/30 flex items-start gap-2">
+                <i class="fa-solid fa-user-tie text-blue-400 mt-0.5"></i>
+                <div>
+                  <strong class="block text-[10px] uppercase tracking-wider text-blue-400 font-bold">Pesan Bos:</strong>
+                  <span>${esc(item.pesanBos)}</span>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-700/60">
+              <div class="flex gap-2">
+                ${item.status === 'kosong' ? `
+                  <button onclick="window.orderItem('${item.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-truck-fast"></i> ORDER
                   </button>
                 ` : ''}
+
+                ${item.status === 'order' ? `
+                  <button onclick="window.markArrived('${item.id}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> BARANG TIBA
+                  </button>
+                ` : ''}
+
                 ${currentRole === 'bos' ? `
-                  <button onclick="window.bukaModalStatusBos('${item.id}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
+                  <button onclick="window.bukaModalStatusBos('${item.id}')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
                     <i class="fa-solid fa-pen-to-square"></i> Update Bos
                   </button>
                 ` : ''}
               </div>
 
-              <button onclick="window.bukaModalHapus('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Hapus Order">
+              <button onclick="window.bukaModalHapus('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Hapus Data">
                 <i class="fa-solid fa-trash-can text-sm"></i>
               </button>
             </div>
@@ -582,127 +536,149 @@
       }).join('');
     };
 
-    /* Form Handler - Add Order */
+    /* Actions: Add Order */
     window.prosesTambahOrder = async function(e) {
       e.preventDefault();
       const nama = document.getElementById('inputNama').value;
-      const kategori = document.getElementById('inputKategori').value;
       const qty = document.getElementById('inputQty').value;
-      const motor = document.getElementById('inputMotor').value || 'Universal';
-      const pemohon = document.getElementById('inputPemohon').value || 'Mekanik';
-      const catatan = document.getElementById('inputCatatan').value || '';
-      const urgent = document.getElementById('inputUrgent').checked;
+      const kategori = 'Sparepart';
+      const motor = '-';
+      const pemohon = currentRole === 'bos' ? 'Bos' : 'Mekanik';
+      const catatan = '';
+      const urgent = document.getElementById('inputUrgent') ? document.getElementById('inputUrgent').checked : false;
 
-      const newOrder = {
+      const newItem = {
         nama,
-        kategori,
         qty,
+        kategori,
         motor,
         pemohon,
         catatan,
         urgent,
-        status: 'Belum Dipesan',
+        status: 'kosong',
         pesanBos: '',
+        createdAt: Date.now(),
         tanggal: new Date().toLocaleDateString('id-ID')
       };
 
-      if (!isLocalStorageMode && ordersCollectionRef) {
+      if (!isLocalStorageMode && ordersRef) {
         try {
-          await addDoc(ordersCollectionRef, newOrder);
-          window.showToast('Order sparepart berhasil disimpan!');
-        } catch (err) {
-          console.error("Gagal menambah doc Firebase:", err);
-          window.showToast('Error menyimpan online, beralih ke lokal', 'error');
-          newOrder.id = 'loc-' + Date.now();
-          ordersData.unshift(newOrder);
+          await addDoc(ordersRef, newItem);
+          window.showToast('Barang kosong berhasil dicatat!');
+        } catch(err) {
+          newItem.id = 'loc-' + Date.now();
+          ordersData.unshift(newItem);
           saveToLocalStorage();
+          window.showToast('Tersimpan di storage lokal');
         }
       } else {
-        newOrder.id = 'loc-' + Date.now();
-        ordersData.unshift(newOrder);
+        newItem.id = 'loc-' + Date.now();
+        ordersData.unshift(newItem);
         saveToLocalStorage();
-        window.showToast('Order sparepart disimpan lokal');
+        window.showToast('Tersimpan di storage lokal');
       }
 
       window.tutupModal('modalTambah');
     };
 
-    /* Form Handler - Bos Status Update */
+    /* Move from Kosong -> Di-order */
+    window.orderItem = async function(id) {
+      const updateData = {
+        status: 'order',
+        orderedAt: Date.now()
+      };
+
+      if (!isLocalStorageMode && db) {
+        try {
+          await updateDoc(doc(db, 'orders', id), updateData);
+          window.showToast('Barang dipindahkan ke Di-order!');
+        } catch(err) {
+          updateLocalItem(id, updateData);
+        }
+      } else {
+        updateLocalItem(id, updateData);
+      }
+    };
+
+    /* Move from Order -> Ada di Bengkel */
+    window.markArrived = async function(id) {
+      const updateData = { status: 'selesai' };
+
+      if (!isLocalStorageMode && db) {
+        try {
+          await updateDoc(doc(db, 'orders', id), updateData);
+          window.showToast('Barang sudah tiba di Bengkel!');
+        } catch(err) {
+          updateLocalItem(id, updateData);
+        }
+      } else {
+        updateLocalItem(id, updateData);
+      }
+    };
+
+    /* Bos Update Form */
     window.prosesUpdateBos = async function(e) {
       e.preventDefault();
       const id = document.getElementById('bosOrderId').value;
       const statusChoice = document.getElementById('bosStatusChoice').value;
       const pesanBos = document.getElementById('bosPesan').value;
 
+      const updateData = {
+        status: statusChoice,
+        pesanBos: pesanBos
+      };
+
+      if (statusChoice === 'order') {
+        updateData.orderedAt = Date.now();
+      }
+
       if (!isLocalStorageMode && db) {
         try {
-          const docRef = doc(db, 'orders', id);
-          await updateDoc(docRef, {
-            status: statusChoice,
-            pesanBos: pesanBos
-          });
+          await updateDoc(doc(db, 'orders', id), updateData);
           window.showToast('Status berhasil diupdate!');
         } catch(err) {
-          console.error("Gagal update doc:", err);
-          updateLocalItem(id, statusChoice, pesanBos);
+          updateLocalItem(id, updateData);
         }
       } else {
-        updateLocalItem(id, statusChoice, pesanBos);
+        updateLocalItem(id, updateData);
       }
 
       window.tutupModal('modalStatusBos');
     };
 
-    function updateLocalItem(id, statusChoice, pesanBos) {
+    function updateLocalItem(id, fields) {
       const idx = ordersData.findIndex(o => o.id === id);
       if (idx !== -1) {
-        ordersData[idx].status = statusChoice;
-        ordersData[idx].pesanBos = pesanBos;
+        ordersData[idx] = { ...ordersData[idx], ...fields };
         saveToLocalStorage();
-        window.showToast('Status diupdate lokal');
+        window.showToast('Data diperbarui!');
       }
     }
 
-    /* Direct Mark Arrived */
-    window.tandaiTibaDirect = async function(id) {
-      if (!isLocalStorageMode && db) {
-        try {
-          const docRef = doc(db, 'orders', id);
-          await updateDoc(docRef, { status: 'Ada di Bengkel' });
-          window.showToast('Barang ditandai Tiba di Bengkel!');
-        } catch(err) {
-          updateLocalItem(id, 'Ada di Bengkel', '');
-        }
-      } else {
-        updateLocalItem(id, 'Ada di Bengkel', '');
-      }
-    };
-
-    /* Delete Order Handler */
+    /* Delete Item */
     window.prosesHapusOrder = async function() {
       if (!targetDeleteId) return;
 
       if (!isLocalStorageMode && db) {
         try {
-          const docRef = doc(db, 'orders', targetDeleteId);
-          await deleteDoc(docRef);
-          window.showToast('Orderan berhasil dihapus');
+          await deleteDoc(doc(db, 'orders', targetDeleteId));
+          window.showToast('Data berhasil dihapus');
         } catch(err) {
-          console.error("Gagal hapus doc:", err);
           ordersData = ordersData.filter(o => o.id !== targetDeleteId);
           saveToLocalStorage();
-          window.showToast('Orderan dihapus lokal');
+          window.showToast('Dihapus dari storage lokal');
         }
       } else {
         ordersData = ordersData.filter(o => o.id !== targetDeleteId);
         saveToLocalStorage();
-        window.showToast('Orderan dihapus lokal');
+        window.showToast('Dihapus dari storage lokal');
       }
 
       targetDeleteId = null;
       window.tutupModal('modalHapus');
     };
 
+    /* Database Initialization */
     async function initDatabase() {
       updateSyncBadge('loading', 'Menghubungkan Firebase...');
 
@@ -711,32 +687,28 @@
         db = getFirestore(app);
         auth = getAuth(app);
 
-        /* Try Anonymous Sign-In */
-        try {
-          await signInAnonymously(auth);
-        } catch (authErr) {
-          console.warn("Auth info:", authErr);
-        }
+        try { await signInAnonymously(auth); } catch(e) {}
 
-        ordersCollectionRef = collection(db, 'orders');
+        ordersRef = collection(db, 'orders');
 
-        /* Realtime Listener */
-        onSnapshot(ordersCollectionRef, (snapshot) => {
+        onSnapshot(ordersRef, (snapshot) => {
           isLocalStorageMode = false;
           ordersData = [];
           snapshot.forEach((docSnap) => {
             ordersData.push({ id: docSnap.id, ...docSnap.data() });
           });
-          updateSyncBadge('online', 'Cloud Online Active');
+          updateSyncBadge('online', 'Cloud Online');
           window.filterData();
         }, (error) => {
-          console.warn("Firebase snapshot error:", error);
-          aktifkanModeLokal("Akses Firestore ditolak atau aturan belum aktif");
+          isLocalStorageMode = true;
+          updateSyncBadge('local', 'Offline (Storage Lokal)');
+          loadFromLocalStorage();
         });
 
       } catch (err) {
-        console.warn("Database init error:", err);
-        aktifkanModeLokal("Gagal terhubung ke Firebase Server");
+        isLocalStorageMode = true;
+        updateSyncBadge('local', 'Offline (Storage Lokal)');
+        loadFromLocalStorage();
       }
     }
 
