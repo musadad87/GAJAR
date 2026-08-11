@@ -4,462 +4,705 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistem Order Stok Bengkel Motor</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Inter Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
-    .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-16 antialiased">
 
-  <!-- Header Navbar -->
-  <header class="bg-amber-600 text-white shadow-md sticky top-0 z-30">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-2.5">
-        <div class="bg-amber-700/60 p-2 rounded-xl text-white">
-          <i class="fa-solid fa-screwdriver-wrench text-xl"></i>
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-slate-800">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-amber-500 text-slate-900 w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-inner">
+          <i class="fa-solid fa-wrench"></i>
         </div>
         <div>
-          <h1 class="font-bold text-base leading-snug">Stok Bengkel Motor</h1>
-          <p class="text-[11px] text-amber-100" id="roleSubtitle">Mode Akses: Mekanik / Kasir</p>
+          <h1 class="text-base sm:text-lg font-bold leading-tight">Order Stok Bengkel</h1>
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span id="syncStatus" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Memuat Data...
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- Role Switcher Button -->
-      <button onclick="toggleRole()" id="btnSwitchRole" class="bg-amber-800 hover:bg-amber-900 border border-amber-400/30 text-white font-semibold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-user-gear"></i>
-        <span id="lblRole">Ganti ke Mode Bos</span>
-      </button>
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div class="bg-slate-800 p-1 rounded-xl flex border border-slate-700 text-xs font-semibold">
+          <button id="btnRoleMekanik" onclick="window.setRole('mekanik')" class="px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow">
+            <i class="fa-solid fa-user-gear mr-1"></i> Mekanik
+          </button>
+          <button id="btnRoleBos" onclick="window.setRole('bos')" class="px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user-tie mr-1"></i> Bos Bengkel
+          </button>
+        </div>
+        
+        <button onclick="window.bukaModalTambah()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-md transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus text-sm"></i> <span>Order Baru</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Main Content Area -->
-  <main class="max-w-3xl mx-auto px-4 py-5 flex-1 w-full space-y-4">
+  <main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- Quick Action & Stats Cards -->
-    <div class="grid grid-cols-3 gap-2 sm:gap-3">
-      <div onclick="setFilter('Belum Diorder')" class="cursor-pointer bg-white p-3 rounded-2xl border border-amber-200 text-center shadow-xs hover:border-amber-400 transition">
-        <span class="text-xs font-bold text-amber-700 block mb-0.5">⏳ Belum Beli</span>
-        <span class="text-xl sm:text-2xl font-extrabold text-slate-800" id="cntBelum">0</span>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">Belum Beli</p>
+          <h3 id="countBelum" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-hourglass-half"></i>
+        </div>
       </div>
-      <div onclick="setFilter('Sudah Diorder')" class="cursor-pointer bg-white p-3 rounded-2xl border border-blue-200 text-center shadow-xs hover:border-blue-400 transition">
-        <span class="text-xs font-bold text-blue-700 block mb-0.5">🚚 Dipesan</span>
-        <span class="text-xl sm:text-2xl font-extrabold text-slate-800" id="cntDipesan">0</span>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">Dipesan Bos</p>
+          <h3 id="countDipesan" class="text-2xl font-bold text-blue-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-truck-fast"></i>
+        </div>
       </div>
-      <div onclick="setFilter('Barang Diterima')" class="cursor-pointer bg-white p-3 rounded-2xl border border-emerald-200 text-center shadow-xs hover:border-emerald-400 transition">
-        <span class="text-xs font-bold text-emerald-700 block mb-0.5">✅ Ada di Bengkel</span>
-        <span class="text-xl sm:text-2xl font-extrabold text-slate-800" id="cntAda">0</span>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">Ada di Bengkel</p>
+          <h3 id="countSelesai" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">Stok Habis</p>
+          <h3 id="countUrgent" class="text-2xl font-bold text-rose-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
       </div>
     </div>
 
-    <!-- Controls Bar -->
-    <div class="flex gap-2 items-center">
-      <div class="relative flex-1">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="renderOrders()" placeholder="Cari sparepart / tipe motor..." class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" oninput="window.filterData()" placeholder="Cari sparepart, tipe motor, atau pengaju..." class="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50">
+        </div>
+        <div class="flex gap-2">
+          <select id="filterStatus" onchange="window.filterData()" class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 font-medium text-slate-700">
+            <option value="semua">Semua Status</option>
+            <option value="Belum Dipesan">⏳ Belum Dipesan</option>
+            <option value="Dipesan">🚚 Dipesan (Proses)</option>
+            <option value="Ada di Bengkel">✅ Ada di Bengkel</option>
+            <option value="urgent">🚨 Khusus Stok Habis</option>
+          </select>
+          <select id="filterKategori" onchange="window.filterData()" class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 font-medium text-slate-700">
+            <option value="semua">Semua Kategori</option>
+            <option value="Oli & Cairan">Oli & Cairan</option>
+            <option value="Kampas & Rem">Kampas & Rem</option>
+            <option value="Ban & Velg">Ban & Velg</option>
+            <option value="Busi & Kelistrikan">Busi & Kelistrikan</option>
+            <option value="Engine & Rantai">Engine & Rantai</option>
+            <option value="Aksesori & Lainnya">Aksesori & Lainnya</option>
+          </select>
+        </div>
       </div>
-
-      <button onclick="openModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2.5 rounded-xl text-sm shadow-sm flex items-center gap-1.5 shrink-0 transition">
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span class="hidden sm:inline">Minta Sparepart</span>
-        <span class="sm:hidden">Minta</span>
-      </button>
     </div>
 
-    <!-- Filter Pills -->
-    <div class="flex gap-1.5 text-xs font-semibold overflow-x-auto pb-1">
-      <button onclick="setFilter('semua')" id="flt-semua" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white">Semua</button>
-      <button onclick="setFilter('Belum Diorder')" id="flt-Belum Diorder" class="px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200">⏳ Belum Beli</button>
-      <button onclick="setFilter('Sudah Diorder')" id="flt-Sudah Diorder" class="px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200">🚚 Dipesan</button>
-      <button onclick="setFilter('Barang Diterima')" id="flt-Barang Diterima" class="px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200">✅ Ada di Bengkel</button>
-    </div>
-
-    <!-- Order Cards List -->
-    <div id="orderList" class="space-y-3">
-      <!-- Dynamic list items rendered here -->
+    <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Order items injected via JS -->
     </div>
 
   </main>
 
-  <!-- Modal 1: Form Ajukan Sparepart Baru -->
-  <div id="addModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden animate-fadeIn">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-      <div class="bg-amber-600 text-white px-4 py-3 flex justify-between items-center">
-        <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-wrench"></i> Ajukan Sparepart Motor
+  <div id="modalTambah" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden p-4 z-50 animate-fade-in">
+    <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i class="fa-solid fa-box-archive text-amber-400"></i> Ajukan Permintaan Sparepart
         </h3>
-        <button onclick="closeModal()" class="text-amber-100 hover:text-white text-lg">
+        <button onclick="window.tutupModal('modalTambah')" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <form onsubmit="saveNewOrder(event)" class="p-4 space-y-3">
+      <form id="formTambahOrder" onsubmit="window.simpanOrder(event)" class="p-6 overflow-y-auto space-y-4">
+        <!-- Quick Fill Buttons -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Sparepart & Merk *</label>
-          <input type="text" id="inpNama" required placeholder="Contoh: Oli MPX2 Matic / Kampas Rem Vario" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah (Qty) *</label>
-            <input type="text" id="inpQty" required placeholder="Contoh: 1 Dus / 5 Pcs" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipe Motor</label>
-            <input type="text" id="inpMotor" placeholder="Vario / NMAX / Universal" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Pilihan Cepat Sparepart (Opsional)</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="window.quickFill('Oli MPX2 0.8L', 'Oli & Cairan', 'Honda Matic')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-700 text-xs rounded-lg font-medium transition">Oli MPX2</button>
+            <button type="button" onclick="window.quickFill('Kampas Rem Depan Beat', 'Kampas & Rem', 'Honda Beat')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-700 text-xs rounded-lg font-medium transition">Kampas Beat</button>
+            <button type="button" onclick="window.quickFill('Ban Ban Tubeless 80/90-14', 'Ban & Velg', 'Matic Universal')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-700 text-xs rounded-lg font-medium transition">Ban 80/90-14</button>
+            <button type="button" onclick="window.quickFill('Busi CPR9EA-9', 'Busi & Kelistrikan', 'Vario/NMAX')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-700 text-xs rounded-lg font-medium transition">Busi CPR9</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Sparepart / Barang *</label>
+          <input type="text" id="inputNama" required placeholder="Contoh: Roller Vario 125 11gram" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pemohon *</label>
-            <input type="text" id="inpPengaju" required placeholder="Nama Mekanik / Kasir" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Status Stok</label>
-            <select id="inpUrgensi" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white font-medium">
-              <option value="Biasa">Biasa (Menipis)</option>
-              <option value="Habis">⚠️ STOK HABIS!</option>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori *</label>
+            <select id="inputKategori" required class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+              <option value="Oli & Cairan">Oli & Cairan</option>
+              <option value="Kampas & Rem">Kampas & Rem</option>
+              <option value="Ban & Velg">Ban & Velg</option>
+              <option value="Busi & Kelistrikan">Busi & Kelistrikan</option>
+              <option value="Engine & Rantai">Engine & Rantai</option>
+              <option value="Aksesori & Lainnya">Aksesori & Lainnya</option>
             </select>
           </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Untuk Tipe Motor *</label>
+            <input type="text" id="inputMotor" required placeholder="Contoh: Honda Vario 125" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Batal</button>
-          <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-xs">Kirim Permintaan</button>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah / Qty *</label>
+            <input type="text" id="inputQty" required placeholder="Contoh: 3 Set / 5 Pcs" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mekanik / Pemohon *</label>
+            <input type="text" id="inputPemohon" required placeholder="Nama Anda (cth: Mas Agus)" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+
+        <div class="bg-rose-50 p-3 rounded-xl border border-rose-200 flex items-center gap-3">
+          <input type="checkbox" id="inputUrgent" class="w-4 h-4 text-rose-600 rounded focus:ring-rose-500">
+          <label for="inputUrgent" class="text-xs font-bold text-rose-800 cursor-pointer">
+            🚨 DARURAT: Stok Benar-Benar Habis / Ada Konsumen Menunggu!
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+          <textarea id="inputCatatan" rows="2" placeholder="Merk/Tipe khusus atau keterangan tambahan..." class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="window.tutupModal('modalTambah')" class="px-4 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Batal</button>
+          <button type="submit" class="px-5 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md">Simpan Order</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 2: Edit Status & Info Supplier (Khusus Mode Bos) -->
-  <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden animate-fadeIn">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-      <div class="bg-slate-800 text-white px-4 py-3 flex justify-between items-center">
-        <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-user-check text-amber-400"></i> Update Status dari Bos Bengkel
+  <div id="modalStatusBos" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden p-4 z-50 animate-fade-in">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
+      <div class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i class="fa-solid fa-truck-fast"></i> Update Status Pemesanan
         </h3>
-        <button onclick="closeEditModal()" class="text-slate-300 hover:text-white text-lg">
+        <button onclick="window.tutupModal('modalStatusBos')" class="text-blue-100 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <form onsubmit="saveEditOrder(event)" class="p-4 space-y-3">
-        <input type="hidden" id="editId">
-
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
-          <div class="text-slate-400">Nama Barang:</div>
-          <div id="lblEditNama" class="font-bold text-slate-800 text-sm"></div>
-          <div id="lblEditInfo" class="text-amber-700 font-semibold mt-0.5"></div>
-        </div>
-
+      <form id="formStatusBos" onsubmit="window.simpanStatusBos(event)" class="p-6 space-y-4">
+        <input type="hidden" id="bosOrderId">
+        
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Status Pemesanan</label>
-          <select id="editStatus" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-            <option value="Belum Diorder">⏳ Belum Diorder (Masih Antre)</option>
-            <option value="Sudah Diorder">🚚 Sudah Diorder (Proses Beli / Kirim)</option>
-            <option value="Barang Diterima">✅ Barang Sudah Ada di Bengkel</option>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Ubah Status Ke *</label>
+          <select id="bosStatusChoice" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 bg-white">
+            <option value="Dipesan">🚚 Dipesan (Sudah Dibeli / Dalam Pengiriman)</option>
+            <option value="Ada di Bengkel">✅ Ada di Bengkel (Barang Sudah Datang)</option>
+            <option value="Belum Dipesan">⏳ Belum Dipesan (Batal / Tunda)</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Supplier / Toko Grosir (Opsional)</label>
-          <input type="text" id="editInfoBos" placeholder="Contoh: Dipesan dari Distributor A. Est tiba besok sore" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-          <p class="text-[10px] text-slate-400 mt-1">Pesan ini langsung dibaca mekanik agar mereka tahu kepastian barang.</p>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Pesan / Info Bos untuk Mekanik (Opsional)</label>
+          <textarea id="bosPesan" rows="3" placeholder="Contoh: Sudah dibeli di Toko Jaya, estimasi datang jam 2 siang. Resi: JNE12345" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
         </div>
 
-        <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-          <button type="button" onclick="openDeleteModal(document.getElementById('editId').value)" class="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center gap-1">
-            <i class="fa-solid fa-trash"></i> Hapus Order
-          </button>
-          
-          <div class="flex gap-2">
-            <button type="button" onclick="closeEditModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Batal</button>
-            <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-900 text-white shadow-xs">Simpan Status</button>
-          </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="window.tutupModal('modalStatusBos')" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600">Batal</button>
+          <button type="submit" class="px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md">Update Status</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 3: Konfirmasi Hapus Data -->
-  <div id="deleteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden animate-fadeIn">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-5 text-center space-y-4">
+  <div id="modalHapus" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden p-4 z-50 animate-fade-in">
+    <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center space-y-4 border border-slate-100">
       <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl">
         <i class="fa-solid fa-trash-can"></i>
       </div>
       <div>
-        <h3 class="font-bold text-slate-800 text-base">Hapus Order Stok Ini?</h3>
-        <p class="text-xs text-slate-500 mt-1">Data orderan ini akan dihapus. Gunakan fitur ini jika ada salah input barang.</p>
+        <h3 class="font-bold text-slate-800 text-base">Hapus Order Barang?</h3>
+        <p class="text-xs text-slate-500 mt-1" id="hapusText">Data orderan ini akan dihapus permanen dari daftar.</p>
       </div>
-      <input type="hidden" id="deleteTargetId">
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Batal</button>
-        <button type="button" onclick="executeDelete()" class="flex-1 py-2.5 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs">Ya, Hapus Data</button>
+      <div class="flex justify-center gap-2 pt-2">
+        <button onclick="window.tutupModal('modalHapus')" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Batal</button>
+        <button onclick="window.prosesHapus()" class="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-md">Ya, Hapus Data</button>
       </div>
     </div>
   </div>
 
-  <!-- Notification Toast -->
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50"></div>
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
-  <script>
-    // System State
-    let role = 'staff'; // 'staff' or 'owner'
-    let currentFilter = 'semua';
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Initial Sparepart Data
-    const defaultData = [
-      { id: '1', nama: 'Oli Engine MPX2 Matic 0.8L', qty: '2 Dus (48 Btl)', motor: 'Honda Matic', pengaju: 'Agus Mekanik', urgensi: 'Habis', status: 'Sudah Diorder', infoBos: 'Dipesan dari Distributor. Estimasi tiba besok jam 10 pagi', tgl: '11 Aug' },
-      { id: '2', nama: 'Kampas Rem Depan Vario 125/150', qty: '10 Set', motor: 'Vario / Beat', pengaju: 'Budi', urgensi: 'Biasa', status: 'Belum Diorder', infoBos: '', tgl: '11 Aug' },
-      { id: '3', nama: 'Ban Luar Tubeless 90/90-14 FDR', qty: '5 Pcs', motor: 'Universal Ring 14', pengaju: 'Agus Mekanik', urgensi: 'Habis', status: 'Barang Diterima', infoBos: 'Diambil langsung dari toko grosir', tgl: '10 Aug' }
-    ];
+    // Application Global Variables
+    let db = null;
+    let auth = null;
+    let ordersCollectionRef = null;
+    let ordersData = [];
+    let currentRole = 'mekanik';
+    let targetDeleteId = null;
+    let isFirebaseReady = false;
 
-    let orders = [];
+    // App ID & Configuration
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'bengkel-stok-app';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+      apiKey: "AIzaSyDNZHfn6WFVGRQH8AzPQzHYYhtWjpJFT08",
+      authDomain: "nedi-4cb8d.firebaseapp.com",
+      projectId: "nedi-4cb8d",
+      storageBucket: "nedi-4cb8d.firebasestorage.app",
+      messagingSenderId: "594252750745",
+      appId: "1:594252750745:web:d4fc11854d1aaaa1093d08",
+      measurementId: "G-GY97JTDE3Y"
+    };
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const saved = localStorage.getItem('simple_stok_bengkel');
-      orders = saved ? JSON.parse(saved) : defaultData;
-      renderOrders();
-    });
+    async function initDatabase() {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
 
-    function saveData() {
-      localStorage.setItem('simple_stok_bengkel', JSON.stringify(orders));
-      renderOrders();
-    }
+        // Firebase Auth initialization rule
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
 
-    function toggleRole() {
-      role = (role === 'staff') ? 'owner' : 'staff';
-      
-      const roleSubtitle = document.getElementById('roleSubtitle');
-      const lblRole = document.getElementById('lblRole');
+        // Strict Path Rule: /artifacts/{appId}/public/data/orders
+        ordersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
 
-      if (role === 'owner') {
-        roleSubtitle.innerText = 'Mode Akses: Bos Bengkel (Admin)';
-        lblRole.innerText = 'Ganti ke Mode Mekanik';
-        showToast('Mode Bos Aktif: Anda bisa update status pemesanan');
-      } else {
-        roleSubtitle.innerText = 'Mode Akses: Mekanik / Kasir';
-        lblRole.innerText = 'Ganti ke Mode Bos';
-        showToast('Mode Mekanik Aktif');
+        // Realtime Listener
+        onSnapshot(ordersCollectionRef, (snapshot) => {
+          ordersData = [];
+          snapshot.forEach((docSnap) => {
+            ordersData.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          isFirebaseReady = true;
+          updateSyncBadge(true, "Cloud Firebase Aktif");
+          window.filterData();
+        }, (error) => {
+          console.warn("Firebase snapshot error, using local storage fallback:", error);
+          loadLocalStorageFallback();
+        });
+
+      } catch (err) {
+        console.warn("Database init error, running offline mode:", err);
+        loadLocalStorageFallback();
       }
-      renderOrders();
     }
 
-    function setFilter(filter) {
-      currentFilter = filter;
-      document.querySelectorAll('[id^="flt-"]').forEach(btn => {
-        btn.className = "px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200";
-      });
-      const activeBtn = document.getElementById('flt-' + filter);
-      if(activeBtn) activeBtn.className = "px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold";
-
-      renderOrders();
+    function loadLocalStorageFallback() {
+      isFirebaseReady = false;
+      const local = localStorage.getItem('bengkel_stok_orders');
+      if (local) {
+        ordersData = JSON.parse(local);
+      } else {
+        ordersData = [
+          {
+            id: 'demo-1',
+            nama: 'Oli MPX2 0.8 Liter',
+            kategori: 'Oli & Cairan',
+            motor: 'Honda Vario / Beat',
+            qty: '10 Botol',
+            pemohon: 'Mas Agus',
+            urgent: true,
+            status: 'Belum Dipesan',
+            catatan: 'Stok oli matic sisa 1 botol',
+            pesanBos: '',
+            tanggal: '2026-08-11'
+          },
+          {
+            id: 'demo-2',
+            nama: 'Kampas Rem Depan (Nissin)',
+            kategori: 'Kampas & Rem',
+            motor: 'Yamaha NMAX',
+            qty: '3 Set',
+            pemohon: 'Budi',
+            urgent: false,
+            status: 'Dipesan',
+            catatan: '',
+            pesanBos: 'Sudah di-order di Tokopedia, resi JNE: 881234. Est tiba besok.',
+            tanggal: '2026-08-10'
+          }
+        ];
+        saveLocalStorage();
+      }
+      updateSyncBadge(false, "Mode Penyimpanan Lokal");
+      window.filterData();
     }
 
-    function renderOrders() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const container = document.getElementById('orderList');
+    function saveLocalStorage() {
+      localStorage.setItem('bengkel_stok_orders', JSON.stringify(ordersData));
+    }
+
+    function updateSyncBadge(online, text) {
+      const el = document.getElementById('syncStatus');
+      if (online) {
+        el.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${text}`;
+      } else {
+        el.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${text}`;
+      }
+    }
+
+    window.renderOrders = function(items) {
+      const container = document.getElementById('ordersContainer');
       container.innerHTML = '';
 
-      let cntBelum = 0, cntDipesan = 0, cntAda = 0;
-
-      orders.forEach(o => {
-        if(o.status === 'Belum Diorder') cntBelum++;
-        if(o.status === 'Sudah Diorder') cntDipesan++;
-        if(o.status === 'Barang Diterima') cntAda++;
+      // Update counters
+      let countBelum = 0, countDipesan = 0, countSelesai = 0, countUrgent = 0;
+      ordersData.forEach(o => {
+        if (o.status === 'Belum Dipesan') countBelum++;
+        if (o.status === 'Dipesan') countDipesan++;
+        if (o.status === 'Ada di Bengkel') countSelesai++;
+        if (o.urgent && o.status !== 'Ada di Bengkel') countUrgent++;
       });
 
-      document.getElementById('cntBelum').innerText = cntBelum;
-      document.getElementById('cntDipesan').innerText = cntDipesan;
-      document.getElementById('cntAda').innerText = cntAda;
+      document.getElementById('countBelum').innerText = countBelum;
+      document.getElementById('countDipesan').innerText = countDipesan;
+      document.getElementById('countSelesai').innerText = countSelesai;
+      document.getElementById('countUrgent').innerText = countUrgent;
 
-      const filtered = orders.filter(o => {
-        const matchSearch = o.nama.toLowerCase().includes(search) || 
-                            o.motor.toLowerCase().includes(search) || 
-                            o.pengaju.toLowerCase().includes(search);
-        const matchFilter = (currentFilter === 'semua') || (o.status === currentFilter);
-        return matchSearch && matchFilter;
-      });
-
-      if (filtered.length === 0) {
+      if (!items || items.length === 0) {
         container.innerHTML = `
-          <div class="bg-white p-6 rounded-2xl text-center text-slate-400 border border-slate-200/60">
-            <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300 block"></i>
-            <p class="text-xs font-medium">Belum ada daftar orderan sparepart.</p>
+          <div class="col-span-full bg-white rounded-2xl p-8 text-center border border-slate-200">
+            <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto text-xl mb-3">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <h4 class="font-bold text-slate-700">Tidak Ada Order Sparepart</h4>
+            <p class="text-xs text-slate-400 mt-1">Klik tombol "+ Order Baru" untuk mengajukan permintaan stok.</p>
           </div>
         `;
         return;
       }
 
-      filtered.forEach(item => {
-        let badgeHtml = '';
-        if (item.status === 'Belum Diorder') {
-          badgeHtml = `<span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-amber-200">⏳ Belum Beli</span>`;
-        } else if (item.status === 'Sudah Diorder') {
-          badgeHtml = `<span class="bg-blue-100 text-blue-800 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-blue-200">🚚 Dipesan</span>`;
-        } else {
-          badgeHtml = `<span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-emerald-200">✅ Ada di Bengkel</span>`;
+      // Sort items: Urgent first, then by date newest
+      const sorted = [...items].sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
+
+      sorted.forEach((item) => {
+        let badgeStatus = 'bg-amber-100 text-amber-800 border-amber-300';
+        let statusIcon = 'fa-hourglass-half';
+        if (item.status === 'Dipesan') {
+          badgeStatus = 'bg-blue-100 text-blue-800 border-blue-300';
+          statusIcon = 'fa-truck-fast';
+        } else if (item.status === 'Ada di Bengkel') {
+          badgeStatus = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+          statusIcon = 'fa-circle-check';
         }
 
-        const urgentTag = item.urgensi === 'Habis' 
-          ? `<span class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-200">⚠️ STOK HABIS</span>` 
-          : '';
-
         const card = document.createElement('div');
-        card.className = "bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-2.5 animate-fadeIn";
+        card.className = `bg-white rounded-2xl p-4 border ${item.urgent && item.status !== 'Ada di Bengkel' ? 'border-rose-400 ring-2 ring-rose-100' : 'border-slate-200'} shadow-sm space-y-3 relative flex flex-col justify-between transition hover:shadow-md`;
+
         card.innerHTML = `
-          <div class="flex justify-between items-start gap-2">
-            <div>
-              <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-wrap">
-                ${item.nama}
-                ${urgentTag}
+          <div class="space-y-2">
+            <!-- Header Card -->
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 inline-block mb-1">
+                  <i class="fa-solid fa-tag text-[9px] mr-1"></i>${item.kategori || 'Umum'}
+                </span>
+                <h3 class="font-bold text-slate-900 text-base leading-snug">${item.nama}</h3>
+                <p class="text-xs font-semibold text-indigo-600 mt-0.5">
+                  <i class="fa-solid fa-motorcycle mr-1"></i>${item.motor}
+                </p>
               </div>
-              <div class="text-xs text-amber-700 font-semibold mt-0.5">
-                <i class="fa-solid fa-motorcycle text-[10px] mr-1"></i>${item.motor || 'Universal Motor'}
+              <span class="text-xs px-2.5 py-1 rounded-full border font-bold flex items-center gap-1 shrink-0 ${badgeStatus}">
+                <i class="fa-solid ${statusIcon}"></i> ${item.status}
+              </span>
+            </div>
+
+            ${item.urgent && item.status !== 'Ada di Bengkel' ? `
+              <div class="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation animate-bounce"></i> STOK HABIS! BUTUH SECEPATNYA
+              </div>
+            ` : ''}
+
+            <!-- Details -->
+            <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Jumlah (Qty)</span>
+                <span class="font-bold text-slate-800">${item.qty}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Pemohon</span>
+                <span class="font-semibold text-slate-800">${item.pemohon}</span>
               </div>
             </div>
+
+            ${item.catatan ? `
+              <p class="text-xs text-slate-600 italic bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                <span class="font-semibold text-amber-800 not-italic">Catatan:</span> "${item.catatan}"
+              </p>
+            ` : ''}
+
+            ${item.pesanBos ? `
+              <div class="text-xs text-blue-900 bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+                <span class="font-bold text-blue-700 block mb-0.5"><i class="fa-solid fa-user-tie mr-1"></i>Pesan Bos/Owner:</span>
+                "${item.pesanBos}"
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Card Footer & Actions -->
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-400 text-[10px]">
+              <i class="fa-regular fa-clock mr-1"></i>${item.tanggal || 'Hari ini'}
+            </span>
+
             <div class="flex items-center gap-1.5">
-              ${badgeHtml}
-              <button onclick="openDeleteModal('${item.id}')" title="Hapus order jika salah input" class="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition text-xs">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center text-xs font-semibold text-slate-700 bg-slate-50 p-2 rounded-xl">
-            <span>Jumlah: <b class="text-amber-800">${item.qty}</b></span>
-            <span class="text-slate-400 font-normal">Pemohon: ${item.pengaju} (${item.tgl})</span>
-          </div>
-
-          ${item.infoBos ? `
-            <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-xs text-amber-900 font-medium">
-              <span class="font-bold text-amber-800 block mb-0.5"><i class="fa-solid fa-circle-info mr-1"></i>Info Bos Bengkel:</span>
-              ${item.infoBos}
-            </div>
-          ` : ''}
-
-          <div class="pt-1 flex justify-end">
-            ${role === 'owner' ? `
-              <button onclick="openEditModal('${item.id}')" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-amber-400 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-                <i class="fa-solid fa-pen-to-square"></i> Update Status Bos
-              </button>
-            ` : `
-              ${item.status === 'Sudah Diorder' ? `
-                <button onclick="markReceived('${item.id}')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-                  <i class="fa-solid fa-check"></i> Tandai Barang Tiba
+              ${currentRole === 'bos' ? `
+                <button onclick="window.bukaModalStatusBos('${item.id}', '${item.status}', '${(item.pesanBos || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition">
+                  <i class="fa-solid fa-pen-to-square mr-1"></i>Proses
                 </button>
               ` : ''}
-            `}
+
+              ${item.status === 'Dipesan' ? `
+                <button onclick="window.tandaiTibaDirect('${item.id}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-sm transition">
+                  <i class="fa-solid fa-check mr-1"></i>Barang Tiba
+                </button>
+              ` : ''}
+
+              <button onclick="window.konfirmasiHapus('${item.id}', '${item.nama.replace(/'/g, "\\'")}')" class="px-2 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Hapus Order">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+            </div>
           </div>
         `;
+
         container.appendChild(card);
       });
-    }
+    };
 
-    function openModal() {
-      document.getElementById('addModal').classList.remove('hidden');
-    }
+    window.filterData = function() {
+      const search = (document.getElementById('searchInput').value || '').toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const kategori = document.getElementById('filterKategori').value;
 
-    function closeModal() {
-      document.getElementById('addModal').classList.add('hidden');
-    }
+      const filtered = ordersData.filter(item => {
+        const matchSearch = (item.nama || '').toLowerCase().includes(search) ||
+                            (item.motor || '').toLowerCase().includes(search) ||
+                            (item.pemohon || '').toLowerCase().includes(search);
 
-    function saveNewOrder(e) {
-      e.preventDefault();
-      const nama = document.getElementById('inpNama').value;
-      const qty = document.getElementById('inpQty').value;
-      const motor = document.getElementById('inpMotor').value;
-      const pengaju = document.getElementById('inpPengaju').value;
-      const urgensi = document.getElementById('inpUrgensi').value;
+        let matchStatus = true;
+        if (status === 'urgent') matchStatus = item.urgent && item.status !== 'Ada di Bengkel';
+        else if (status !== 'semua') matchStatus = item.status === status;
 
-      const d = new Date();
-      const tgl = d.getDate() + ' ' + d.toLocaleString('id-ID', { month: 'short' });
+        const matchKategori = kategori === 'semua' || item.kategori === kategori;
 
-      orders.unshift({
-        id: Date.now().toString(),
-        nama,
-        qty,
-        motor,
-        pengaju,
-        urgensi,
-        status: 'Belum Diorder',
-        infoBos: '',
-        tgl
+        return matchSearch && matchStatus && matchKategori;
       });
 
-      saveData();
-      closeModal();
-      showToast('Permintaan sparepart telah dikirim!');
-    }
+      window.renderOrders(filtered);
+    };
 
-    function markReceived(id) {
-      orders = orders.map(o => o.id === id ? { ...o, status: 'Barang Diterima' } : o);
-      saveData();
-      showToast('Barang ditandai sudah tiba di bengkel!');
-    }
+    window.setRole = function(role) {
+      currentRole = role;
+      const btnMekanik = document.getElementById('btnRoleMekanik');
+      const btnBos = document.getElementById('btnRoleBos');
 
-    function openEditModal(id) {
-      const item = orders.find(o => o.id === id);
-      if(!item) return;
+      if (role === 'mekanik') {
+        btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow";
+        btnBos.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white";
+        showToast("Switched to Mode Mekanik / Anak Buah", "info");
+      } else {
+        btnBos.className = "px-3 py-1.5 rounded-lg transition-all bg-blue-600 text-white shadow";
+        btnMekanik.className = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white";
+        showToast("Switched to Mode Bos / Owner Bengkel", "info");
+      }
+      window.filterData();
+    };
 
-      document.getElementById('editId').value = item.id;
-      document.getElementById('lblEditNama').innerText = item.nama;
-      document.getElementById('lblEditInfo').innerText = `Qty: ${item.qty} | Pemohon: ${item.pengaju}`;
-      document.getElementById('editStatus').value = item.status;
-      document.getElementById('editInfoBos').value = item.infoBos || '';
+    window.bukaModalTambah = function() {
+      document.getElementById('formTambahOrder').reset();
+      document.getElementById('modalTambah').classList.remove('hidden');
+    };
 
-      document.getElementById('editModal').classList.remove('hidden');
-    }
+    window.tutupModal = function(id) {
+      document.getElementById(id).classList.add('hidden');
+    };
 
-    function closeEditModal() {
-      document.getElementById('editModal').classList.add('hidden');
-    }
+    window.quickFill = function(nama, kategori, motor) {
+      document.getElementById('inputNama').value = nama;
+      document.getElementById('inputKategori').value = kategori;
+      document.getElementById('inputMotor').value = motor;
+    };
 
-    function saveEditOrder(e) {
+    window.simpanOrder = async function(e) {
       e.preventDefault();
-      const id = document.getElementById('editId').value;
-      const status = document.getElementById('editStatus').value;
-      const infoBos = document.getElementById('editInfoBos').value;
+      const newOrder = {
+        nama: document.getElementById('inputNama').value.trim(),
+        kategori: document.getElementById('inputKategori').value,
+        motor: document.getElementById('inputMotor').value.trim(),
+        qty: document.getElementById('inputQty').value.trim(),
+        pemohon: document.getElementById('inputPemohon').value.trim(),
+        urgent: document.getElementById('inputUrgent').checked,
+        catatan: document.getElementById('inputCatatan').value.trim(),
+        status: 'Belum Dipesan',
+        pesanBos: '',
+        tanggal: new Date().toISOString().split('T')[0]
+      };
 
-      orders = orders.map(o => o.id === id ? { ...o, status, infoBos } : o);
-      saveData();
-      closeEditModal();
-      showToast('Status order berhasil diperbarui oleh Bos!');
+      if (isFirebaseReady && ordersCollectionRef) {
+        try {
+          await addDoc(ordersCollectionRef, newOrder);
+          showToast("Order sparepart berhasil disimpan!", "success");
+        } catch (err) {
+          console.error("Firebase add error:", err);
+          saveLocallyNewOrder(newOrder);
+        }
+      } else {
+        saveLocallyNewOrder(newOrder);
+      }
+
+      window.tutupModal('modalTambah');
+    };
+
+    function saveLocallyNewOrder(order) {
+      order.id = 'local-' + Date.now();
+      ordersData.unshift(order);
+      saveLocalStorage();
+      window.filterData();
+      showToast("Order sparepart tersimpan (Lokal)", "success");
     }
 
-    function openDeleteModal(id) {
-      document.getElementById('deleteTargetId').value = id;
-      document.getElementById('deleteModal').classList.remove('hidden');
+    window.bukaModalStatusBos = function(id, currentStatus, currentPesan) {
+      document.getElementById('bosOrderId').value = id;
+      document.getElementById('bosStatusChoice').value = currentStatus;
+      document.getElementById('bosPesan').value = currentPesan || '';
+      document.getElementById('modalStatusBos').classList.remove('hidden');
+    };
+
+    window.simpanStatusBos = async function(e) {
+      e.preventDefault();
+      const id = document.getElementById('bosOrderId').value;
+      const status = document.getElementById('bosStatusChoice').value;
+      const pesanBos = document.getElementById('bosPesan').value.trim();
+
+      if (isFirebaseReady && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+          await updateDoc(docRef, { status, pesanBos });
+          showToast("Status order diperbarui oleh Bos!", "success");
+        } catch (err) {
+          console.error("Firebase update error:", err);
+          updateLocally(id, { status, pesanBos });
+        }
+      } else {
+        updateLocally(id, { status, pesanBos });
+      }
+
+      window.tutupModal('modalStatusBos');
+    };
+
+    window.tandaiTibaDirect = async function(id) {
+      if (isFirebaseReady && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+          await updateDoc(docRef, { status: 'Ada di Bengkel' });
+          showToast("Barang ditandai Tiba di Bengkel!", "success");
+        } catch (err) {
+          updateLocally(id, { status: 'Ada di Bengkel' });
+        }
+      } else {
+        updateLocally(id, { status: 'Ada di Bengkel' });
+      }
+    };
+
+    function updateLocally(id, updateFields) {
+      ordersData = ordersData.map(o => o.id === id ? { ...o, ...updateFields } : o);
+      saveLocalStorage();
+      window.filterData();
+      showToast("Status diperbarui (Lokal)", "success");
     }
 
-    function closeDeleteModal() {
-      document.getElementById('deleteModal').classList.add('hidden');
+    window.konfirmasiHapus = function(id, nama) {
+      targetDeleteId = id;
+      document.getElementById('hapusText').innerText = `Yakin ingin menghapus "${nama}"?`;
+      document.getElementById('modalHapus').classList.remove('hidden');
+    };
+
+    window.prosesHapus = async function() {
+      if (!targetDeleteId) return;
+
+      if (isFirebaseReady && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', targetDeleteId);
+          await deleteDoc(docRef);
+          showToast("Orderan berhasil dihapus", "info");
+        } catch (err) {
+          console.error("Firebase delete error:", err);
+          deleteLocally(targetDeleteId);
+        }
+      } else {
+        deleteLocally(targetDeleteId);
+      }
+
+      targetDeleteId = null;
+      window.tutupModal('modalHapus');
+    };
+
+    function deleteLocally(id) {
+      ordersData = ordersData.filter(o => o.id !== id);
+      saveLocalStorage();
+      window.filterData();
+      showToast("Orderan berhasil dihapus", "info");
     }
 
-    function executeDelete() {
-      const id = document.getElementById('deleteTargetId').value;
-      orders = orders.filter(o => o.id !== id);
-      saveData();
-      closeDeleteModal();
-      closeEditModal();
-      showToast('Orderan berhasil dihapus');
-    }
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
 
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.classList.remove('opacity-0', 'pointer-events-none');
+      let bg = 'bg-slate-900 text-white';
+      let icon = 'fa-circle-info';
+      if (type === 'success') {
+        bg = 'bg-emerald-600 text-white';
+        icon = 'fa-circle-check';
+      } else if (type === 'error') {
+        bg = 'bg-rose-600 text-white';
+        icon = 'fa-triangle-exclamation';
+      }
+
+      toast.className = `${bg} px-4 py-3 rounded-2xl shadow-xl font-medium text-xs flex items-center gap-2 animate-fade-in`;
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+
+      container.appendChild(toast);
       setTimeout(() => {
-        t.classList.add('opacity-0', 'pointer-events-none');
-      }, 2500);
+        toast.remove();
+      }, 3000);
     }
+
+    // Initialize application execution
+    window.addEventListener('DOMContentLoaded', () => {
+      initDatabase();
+    });
   </script>
 </body>
 </html>
